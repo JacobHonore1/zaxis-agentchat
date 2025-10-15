@@ -57,7 +57,7 @@ export default function ChatPage() {
       {/* Chat-vindue */}
       <div
         style={{
-          border: "1px solid #e5e7eb",
+          border: "2px solid #e5e7eb",
           borderRadius: 8,
           height: 420,
           overflowY: "auto",
