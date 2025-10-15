@@ -1,33 +1,39 @@
-import OpenAI from "openai";
+// app/api/chat/route.ts
 import { NextResponse } from "next/server";
-
-// (valgfrit) hurtigere cold start
-export const runtime = "edge"; // eller fjern linjen hvis du vil køre Node runtime
-
-type Msg = { role: "user" | "assistant"; content: string };
+import OpenAI from "openai";
 
 export async function POST(req: Request) {
   try {
-    const { messages } = (await req.json()) as { messages: Msg[] };
+    const { message } = await req.json();
 
-    if (!process.env.OPENAI_API_KEY) {
-      return new NextResponse("Missing OPENAI_API_KEY", { status: 500 });
+    if (!message || typeof message !== "string") {
+      return NextResponse.json(
+        { error: 'Missing "message" (string) in request body' },
+        { status: 400 }
+      );
     }
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-    // Brug en billig, hurtig model – kan skiftes til fx gpt-4o, o4-mini, osv.
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-      temperature: 0.7
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY, // husk at sætte den i Vercel
     });
 
-    const reply = completion.choices[0]?.message?.content ?? "Tomt svar.";
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "Du er en hjælpsom dansk assistent." },
+        { role: "user", content: message },
+      ],
+      temperature: 0.7,
+    });
+
+    const reply =
+      completion.choices?.[0]?.message?.content?.trim() ??
+      "Jeg kunne ikke generere et svar.";
+
     return NextResponse.json({ reply });
   } catch (err: any) {
-    const message = typeof err?.message === "string" ? err.message : "Server error";
-    return new NextResponse(message, { status: 500 });
+    console.error("API error:", err);
+    const msg = err?.message || "Ukendt serverfejl";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-//test
