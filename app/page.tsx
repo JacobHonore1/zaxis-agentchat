@@ -1,22 +1,27 @@
 "use client";
+
 import { useState } from "react";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-export default function ChatPage() {
+export default function Home() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function sendMessage(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
+  async function send() {
+    if (!input.trim()) return;
 
-    const nextMessages = [...messages, { role: "user", content: text }];
+    // --- TypeScript fix: gør role til literal og sæt eksplicit arraytype ---
+    const nextMessages: Msg[] = [
+      ...messages,
+      { role: "user" as const, content: input },
+    ];
     setMessages(nextMessages);
     setInput("");
     setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch("/api/chat", {
@@ -24,101 +29,90 @@ export default function ChatPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ messages: nextMessages }),
       });
-      const data = await res.json();
-      const reply = (data?.reply?.content as string) ?? "Tomt svar.";
-      setMessages([...nextMessages, { role: "assistant", content: reply }]);
-    } catch (err) {
-      setMessages([
-        ...nextMessages,
-        { role: "assistant", content: "Der skete en fejl. Prøv igen." },
+      if (!res.ok) throw new Error(await res.text());
+
+      const data: { reply: string } = await res.json();
+
+      // valgfrit: literal igen for konsistens (ikke strengt nødvendigt)
+      setMessages((cur) => [
+        ...cur,
+        { role: "assistant" as const, content: data.reply },
       ]);
+    } catch (e: any) {
+      setError(e?.message ?? "Noget gik galt.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", padding: 16 }}>
-      <h1 style={{ fontSize: 28, marginBottom: 16 }}>Zaxis Agent Chat</h1>
+    <main style={{ maxWidth: 760, margin: "40px auto", padding: "0 16px" }}>
+      <h1>Zaxis Agent Chat</h1>
+      <p>Din agent app kører. Du kan chatte her på forsiden.</p>
 
       <div
         style={{
-          border: "1px solid #ddd",
-          borderRadius: 8,
-          padding: 12,
-          minHeight: 320,
+          border: "1px solid #e5e5e5",
+          borderRadius: 12,
+          padding: 16,
+          minHeight: 300,
           display: "flex",
           flexDirection: "column",
-          gap: 8,
-          background: "#fafafa",
+          gap: 12,
+          background: "#fff",
         }}
       >
-        {messages.length === 0 && (
-          <div style={{ color: "#666" }}>
-            Skriv en besked nedenfor for at starte en samtale.
-          </div>
-        )}
-
         {messages.map((m, i) => (
           <div
             key={i}
             style={{
               alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-              background: m.role === "user" ? "#2B6CB0" : "#E2E8F0",
-              color: m.role === "user" ? "#fff" : "#111",
+              background: m.role === "user" ? "#eef6ff" : "#f6f6f6",
+              border: "1px solid #e5e5e5",
               padding: "8px 12px",
               borderRadius: 12,
-              maxWidth: "80%",
+              maxWidth: "85%",
               whiteSpace: "pre-wrap",
             }}
           >
-            {m.content}
+            <strong style={{ fontSize: 12, color: "#777" }}>
+              {m.role === "user" ? "Du" : "Assistent"}
+            </strong>
+            <div>{m.content}</div>
           </div>
         ))}
-
-        {loading && (
-          <div
-            style={{
-              alignSelf: "flex-start",
-              background: "#E2E8F0",
-              color: "#111",
-              padding: "8px 12px",
-              borderRadius: 12,
-              maxWidth: "80%",
-            }}
-          >
-            Tænker…
-          </div>
-        )}
       </div>
 
-      <form onSubmit={sendMessage} style={{ marginTop: 12, display: "flex", gap: 8 }}>
+      {error && <div style={{ marginTop: 12, color: "#c00" }}>Fejl: {error}</div>}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Skriv din besked…"
+          placeholder="Skriv en besked…"
           style={{
             flex: 1,
-            padding: "10px 12px",
-            border: "1px solid #ddd",
-            borderRadius: 8,
+            height: 44,
+            borderRadius: 12,
+            border: "1px solid #e5e5e5",
+            padding: "0 12px",
           }}
         />
         <button
-          type="submit"
-          disabled={loading || !input.trim()}
+          onClick={send}
+          disabled={loading}
           style={{
-            padding: "10px 16px",
-            borderRadius: 8,
-            border: "none",
-            background: "#2B6CB0",
+            height: 44,
+            padding: "0 16px",
+            borderRadius: 12,
+            background: "#111",
             color: "#fff",
-            cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+            border: "none",
           }}
         >
-          Send
+          {loading ? "Sender…" : "Send"}
         </button>
-      </form>
+      </div>
     </main>
   );
 }
