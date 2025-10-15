@@ -1,4 +1,4 @@
-export const metadata = { title: "Zaxis Agent Chat" };
+export const metadata = { title: "Virtoo Agent Alpha" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
