@@ -1,11 +1,12 @@
 {
   "name": "zaxis-agentchat",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "postinstall": "next telemetry disable"
   },
   "dependencies": {
     "next": "15.0.3",
@@ -13,9 +14,11 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
-    "@types/react": "^18.3.5",
-    "@types/node": "^20.12.7"
+    "typescript": "^5.6.3",
+    "@types/react": "^18.3.3",
+    "@types/node": "^20.14.11"
   },
-  "engines": { "node": ">=18.18" }
+  "engines": {
+    "node": ">=18.18"
+  }
 }
