@@ -4,24 +4,24 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type Agent = "Knowledge" | "Creative" | "Technical";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const [agent, setAgent] = useState<Agent>("Knowledge");
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const endRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
 
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
     const text = input.trim();
-    setMessages((p) => [...p, { role: "user", content: text }]);
+    setMessages((p) => [...p, { role: "user", content: `[${agent}] ${text}` }]);
     setInput("");
     setLoading(true);
     setError(null);
@@ -30,7 +30,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: `${agent}: ${text}` }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Fejl i serveren");
@@ -52,6 +52,15 @@ export default function ChatPage() {
       <div className="top">
         <Image src="/logo.png" alt="Logo" width={160} height={50} priority className="logo" />
         <h2 className="tagline">assistenter der skaber værdi</h2>
+      </div>
+
+      <div className="agent-select">
+        <label>Vælg agent: </label>
+        <select value={agent} onChange={(e) => setAgent(e.target.value as Agent)}>
+          <option value="Knowledge">Knowledge Agent</option>
+          <option value="Creative">Creative Agent</option>
+          <option value="Technical">Technical Agent</option>
+        </select>
       </div>
 
       <div className="chat">
@@ -133,18 +142,28 @@ export default function ChatPage() {
           padding: 8px 0;
           z-index: 100;
         }
-        .header-text {
-          font-size: 14px;
-          color: var(--muted);
-          letter-spacing: 1px;
-        }
 
-        .top {
-          text-align: center;
-          margin-top: 60px;
-        }
+        .header-text { font-size: 14px; color: var(--muted); letter-spacing: 1px; }
+
+        .top { text-align: center; margin-top: 60px; }
         .logo { width: 160px; height: auto; }
         .tagline { font-size: 14px; opacity: 0.8; margin: 6px 0 18px; }
+
+        .agent-select {
+          margin-top: 10px;
+          background: #111827;
+          padding: 10px 16px;
+          border-radius: 8px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .agent-select select {
+          margin-left: 6px;
+          padding: 6px;
+          border-radius: 6px;
+          background: var(--panel);
+          color: var(--text);
+          border: 1px solid #1e293b;
+        }
 
         .chat {
           width: 100%;
@@ -167,17 +186,10 @@ export default function ChatPage() {
           scrollbar-color: var(--blue) transparent;
         }
 
-        .scroll::-webkit-scrollbar { width: 5px; }
-        .scroll::-webkit-scrollbar-thumb {
-          background: var(--blue);
-          border-radius: 3px;
-        }
-
         .msg {
           padding: 10px 14px;
           border-radius: 10px;
           margin-bottom: 8px;
-          word-break: break-word;
         }
         .msg.me { background: #1e3a8a; align-self: flex-end; }
         .msg.ai { background: rgba(255, 255, 255, 0.08); }
@@ -209,6 +221,7 @@ export default function ChatPage() {
           position: sticky;
           bottom: 0;
         }
+
         .input {
           flex: 1;
           padding: 12px;
@@ -218,6 +231,7 @@ export default function ChatPage() {
           color: var(--text);
           font-size: 16px;
         }
+
         .btn {
           background: var(--blue);
           color: #fff;
@@ -227,14 +241,11 @@ export default function ChatPage() {
           font-weight: 600;
           cursor: pointer;
         }
-        .btn:active {
-          transform: scale(0.95);
-        }
 
         @media (max-width: 768px) {
           .chat { border-radius: 0; max-width: 100%; height: 100vh; }
-          .scroll { padding-bottom: 100px; }
           .inputRow { position: fixed; bottom: 0; left: 0; width: 100%; }
+          .agent-select { width: 90%; text-align: center; }
         }
       `}</style>
     </div>
