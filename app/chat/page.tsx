@@ -12,6 +12,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pulse, setPulse] = useState(false);
+  const [sentGlow, setSentGlow] = useState(false);
 
   const endRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
@@ -25,6 +26,10 @@ export default function ChatPage() {
     setInput("");
     setLoading(true);
     setError(null);
+
+    // Vis kort glow på knap
+    setSentGlow(true);
+    setTimeout(() => setSentGlow(false), 400);
 
     try {
       const res = await fetch("/api/chat", {
@@ -93,7 +98,7 @@ export default function ChatPage() {
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="btn"
+            className={`btn ${sentGlow ? "glow" : ""}`}
             aria-label="Send"
           >
             <span className="btnText">Send</span>
@@ -131,7 +136,6 @@ export default function ChatPage() {
           font-family: Inter, sans-serif;
         }
 
-        /* Fikseret header */
         .header {
           position: fixed;
           top: 0;
@@ -175,6 +179,7 @@ export default function ChatPage() {
           scrollbar-width: thin;
           scrollbar-color: var(--blue) transparent;
         }
+
         .scroll::-webkit-scrollbar { width: 5px; }
         .scroll::-webkit-scrollbar-thumb {
           background: var(--blue);
@@ -186,6 +191,7 @@ export default function ChatPage() {
           border-radius: 10px;
           margin-bottom: 8px;
           word-break: break-word;
+          animation: fadeIn 0.3s ease-in;
         }
         .msg.me { background: #1e3a8a; align-self: flex-end; }
         .msg.ai { background: rgba(255, 255, 255, 0.08); }
@@ -231,20 +237,30 @@ export default function ChatPage() {
           color: #fff;
           border: none;
           border-radius: 50%;
-          width: 42px;
-          height: 42px;
+          width: 44px;
+          height: 44px;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: 0.2s;
+          transition: transform 0.15s ease, box-shadow 0.25s ease;
           cursor: pointer;
         }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn:active {
+          transform: scale(0.88);
+        }
+        .btn.glow {
+          box-shadow: 0 0 15px rgba(37, 99, 235, 0.8);
+          animation: pulseGlow 0.4s ease;
+        }
+        @keyframes pulseGlow {
+          0% { box-shadow: 0 0 0 rgba(37, 99, 235, 0); }
+          40% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.8); transform: scale(1.1); }
+          100% { box-shadow: 0 0 0 rgba(37, 99, 235, 0); transform: scale(1); }
+        }
 
         .btnText { display: none; }
         .btnIcon { display: block; }
 
-        /* Desktop viser tekst */
         @media (min-width: 769px) {
           .btn {
             border-radius: 8px;
