@@ -17,34 +17,27 @@ export default function ChatPage() {
 
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setPulse(false);
+    if (!input.trim() || loading) return;
 
-    const text = input.trim();
-    if (!text || loading) return;
-
-    setMessages((p) => [...p, { role: "user", content: text }]);
+    setMessages((p) => [...p, { role: "user", content: input.trim() }]);
     setInput("");
     setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: input.trim() }),
       });
       const data = await res.json();
-      if (!res.ok || data?.error)
-        throw new Error(data?.error || `Server error (${res.status})`);
+      if (!res.ok) throw new Error(data.error || "Fejl i serveren");
 
-      const reply = (data?.reply ?? "").toString();
-      setMessages((p) => [...p, { role: "assistant", content: reply }]);
-
-      // Pulse når svaret er færdigt
-      setTimeout(() => setPulse(true), 100);
-      setTimeout(() => setPulse(false), 1600);
+      setMessages((p) => [...p, { role: "assistant", content: data.reply || "..." }]);
+      setPulse(true);
+      setTimeout(() => setPulse(false), 1500);
     } catch (err: any) {
-      setError(err?.message || "Ukendt fejl fra serveren.");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -52,23 +45,19 @@ export default function ChatPage() {
 
   return (
     <div className="shell">
-      <div className="logoWrap">
-        <div className="logoGlow" />
-        <Image src="/logo.png" alt="Logo" width={200} height={70} priority className="logo" />
+      <div className="top">
+        <Image src="/logo.png" alt="Logo" width={180} height={60} priority className="logo" />
+        <h2 className="tagline">assistenter der skaber værdi</h2>
       </div>
-
-      <h2 className="tagline">assistenter der skaber værdi</h2>
 
       <div className={`chat ${pulse ? "pulse" : ""}`}>
         <div className="scroll">
           {messages.length === 0 && (
             <div className="placeholder">Skriv en besked herunder for at starte.</div>
           )}
-
           {messages.map((m, i) => (
             <div key={i} className={`msg ${m.role === "user" ? "me" : "ai"}`}>
-              <strong className="msgLabel">{m.role === "user" ? "Du" : "AI"}:</strong>{" "}
-              <span className="msgText">{m.content}</span>
+              <strong>{m.role === "user" ? "Du" : "AI"}:</strong> {m.content}
             </div>
           ))}
 
@@ -80,7 +69,6 @@ export default function ChatPage() {
               <span className="dot" style={{ animationDelay: "0.3s" }} />
             </div>
           )}
-
           <div ref={endRef} />
         </div>
 
@@ -95,62 +83,165 @@ export default function ChatPage() {
             disabled={loading}
             className="input"
           />
-          <button
-            type="submit"
-            disabled={loading || input.trim().length === 0}
-            className="btn"
-          >
-            {loading ? "Sender…" : "Send"}
+          <button type="submit" className="btn" disabled={loading}>
+            {loading ? "..." : "Send"}
           </button>
         </form>
       </div>
 
       <style>{`
-        :root{
-          --bg:#0b1020;
-          --panel:#141b2d;
-          --blue:#2563eb;
-          --text:#fff;
-          --muted:#9ca3af;
-          --radius:18px;
-          --maxW:700px;
+        :root {
+          --bg: #0b1020;
+          --panel: #141b2d;
+          --blue: #2563eb;
+          --text: #ffffff;
+          --muted: #9ca3af;
+          --radius: 18px;
         }
 
-        html,body{margin:0;padding:0;background:var(--bg);overflow:hidden;height:100%}
-        .shell{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;color:var(--text);font-family:Inter,sans-serif}
-        .logoWrap{position:relative;margin-top:60px;margin-bottom:8px}
-        .logoGlow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:100px;background:radial-gradient(circle,rgba(37,99,235,.25),rgba(11,16,32,0)70%);filter:blur(25px)}
-        .tagline{text-align:center;opacity:.8;margin-bottom:28px}
-        .chat{width:min(90vw,var(--maxW));background:var(--panel);border-radius:var(--radius);padding:20px;box-shadow:0 0 30px rgba(0,0,0,.6);display:flex;flex-direction:column;height:65vh;overflow:hidden;animation:fadeInUp 1s ease}
-        .chat.pulse{animation:pulseGlow 1.5s ease-out}
-        .scroll{flex:1;overflow-y:auto;padding-right:8px;scrollbar-width:thin;scrollbar-color:var(--blue,#0f172a)}
-        .scroll::-webkit-scrollbar{width:6px}
-        .scroll::-webkit-scrollbar-thumb{background:var(--blue);border-radius:4px;box-shadow:0 0 4px rgba(37,99,235,.5)}
-        .placeholder{color:var(--muted);text-align:center;margin-top:40px}
-        .msg{border-radius:10px;padding:10px 14px;margin-bottom:10px;animation:fadeIn .4s ease-in}
-        .msg.me{background:#1d2951}
-        .msg.ai{background:rgba(255,255,255,.05)}
-        .msgLabel{opacity:.85;margin-right:4px}
-        .typing{display:flex;align-items:center;gap:6px;margin-top:6px;color:var(--blue);font-size:14px}
-        .dot{width:7px;height:7px;border-radius:50%;background:#3b82f6;display:inline-block;animation:wave 1s infinite ease-in-out;box-shadow:0 0 6px rgba(59,130,246,.7)}
-        @keyframes wave{
-          0%,60%,100%{transform:translateY(0);opacity:.6}
-          30%{transform:translateY(-6px);opacity:1}
+        html, body {
+          margin: 0;
+          padding: 0;
+          background: var(--bg);
+          height: 100%;
+          overflow: hidden;
         }
-        .error{color:#ef4444;margin-top:10px}
-        .inputRow{display:flex;gap:10px;margin-top:16px}
-        .input{flex:1;padding:12px 14px;border-radius:8px;border:1px solid #1e293b;background:#0f172a;color:#fff}
-        .btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px 18px;font-weight:600;cursor:pointer;transition:transform .06s}
-        .btn:active{transform:translateY(1px)}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulseGlow{0%{box-shadow:0 0 0 rgba(37,99,235,0)}40%{box-shadow:0 0 25px rgba(37,99,235,.4)}100%{box-shadow:0 0 0 rgba(37,99,235,0)}}
 
-        /* RESPONSIVE */
-        @media (max-width:768px){
-          .logo{width:170px}
-          .chat{height:60vh}
-          .msg{font-size:15px}
+        .shell {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          min-height: 100vh;
+          background: var(--bg);
+          color: var(--text);
+          font-family: Inter, sans-serif;
+        }
+
+        .top {
+          text-align: center;
+          margin-top: 30px;
+        }
+        .logo {
+          width: 180px;
+          height: auto;
+        }
+        .tagline {
+          margin-top: 4px;
+          font-size: 14px;
+          opacity: 0.8;
+        }
+
+        .chat {
+          width: 100%;
+          max-width: 700px;
+          background: var(--panel);
+          border-radius: var(--radius);
+          box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+          display: flex;
+          flex-direction: column;
+          margin-top: 20px;
+          flex: 1;
+          overflow: hidden;
+        }
+
+        .scroll {
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px;
+          scrollbar-width: thin;
+          scrollbar-color: var(--blue) transparent;
+        }
+
+        .scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .scroll::-webkit-scrollbar-thumb {
+          background: var(--blue);
+          border-radius: 3px;
+        }
+
+        .msg {
+          padding: 10px 14px;
+          border-radius: 10px;
+          margin-bottom: 8px;
+          word-break: break-word;
+          animation: fadeIn 0.3s ease-in;
+        }
+        .msg.me {
+          background: #1e3a8a;
+          align-self: flex-end;
+        }
+        .msg.ai {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .typing {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: var(--blue);
+          margin: 4px 0;
+        }
+        .dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: var(--blue);
+          display: inline-block;
+          animation: dance 1s infinite ease-in-out;
+        }
+        @keyframes dance {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+          30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        .inputRow {
+          display: flex;
+          gap: 8px;
+          padding: 10px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          background: #0f172a;
+          position: sticky;
+          bottom: 0;
+        }
+        .input {
+          flex: 1;
+          padding: 12px;
+          border-radius: 8px;
+          border: 1px solid #1e293b;
+          background: #0f172a;
+          color: var(--text);
+          font-size: 16px;
+        }
+        .btn {
+          background: var(--blue);
+          color: #fff;
+          border: none;
+          border-radius: 8px;
+          padding: 12px 18px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        /* Responsiv styling */
+        @media (max-width: 768px) {
+          .shell { padding: 0 10px; }
+          .logo { width: 140px; }
+          .tagline { font-size: 13px; }
+          .chat {
+            border-radius: 12px;
+            height: calc(100vh - 160px);
+            margin-top: 10px;
+          }
+          .inputRow { padding: 8px; }
+          .input { font-size: 15px; padding: 10px; }
+          .btn { padding: 10px 14px; font-size: 15px; }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
