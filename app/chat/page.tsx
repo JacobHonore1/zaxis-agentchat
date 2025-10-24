@@ -16,11 +16,11 @@ export default function ChatPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
 
-  // Tonede agentfarver
-  const agentStyles: Record<Agent, { color: string; bubble: string }> = {
-    SoMe: { color: "#3b82f6", bubble: "#1e3a8a" },            // blødere blå
-    Strategi: { color: "#22c55e", bubble: "#14532d" },        // dæmpet grøn
-    "Firma Guidelines": { color: "#8b5cf6", bubble: "#4c1d95" } // dæmpet lilla
+  // Blødere og mere afdæmpede farver
+  const agentStyles: Record<Agent, { color: string; bubble: string; light: string }> = {
+    SoMe: { color: "#2b5fb5", bubble: "#1c3366", light: "#3f6fd2" },
+    Strategi: { color: "#1b8a53", bubble: "#0e4730", light: "#29a36a" },
+    "Firma Guidelines": { color: "#6b3fb5", bubble: "#3c2366", light: "#8256d2" },
   };
 
   async function onSend(e: React.FormEvent) {
@@ -50,8 +50,7 @@ export default function ChatPage() {
     }
   }
 
-  const currentColor = agentStyles[agent].color;
-  const currentBubble = agentStyles[agent].bubble;
+  const { color, bubble, light } = agentStyles[agent];
 
   return (
     <div className="shell">
@@ -59,17 +58,16 @@ export default function ChatPage() {
         <Image src="/logo.png" alt="Logo" width={160} height={50} priority className="logo" />
       </div>
 
-      <div className="agent-select" style={{ borderColor: currentColor }}>
+      <div className="agent-select" style={{ borderColor: light }}>
         <label>Vælg agent:</label>
         <select
           value={agent}
           onChange={(e) => setAgent(e.target.value as Agent)}
+          className="dropdown"
           style={{
-            background: currentColor,
+            background: color,
             color: "#fff",
-            border: `1px solid ${currentColor}`,
-            borderRadius: "6px",
-            padding: "4px 8px",
+            border: `1px solid ${light}`,
           }}
         >
           <option value="SoMe">SoMe</option>
@@ -78,14 +76,14 @@ export default function ChatPage() {
         </select>
       </div>
 
-      <div className="chat" style={{ border: `2px solid ${currentColor}` }}>
+      <div className="chat" style={{ border: `2px solid ${light}` }}>
         <div className="scroll">
           {messages.map((m, i) => (
             <div
               key={i}
               className={`msg ${m.role === "user" ? "me" : "ai"}`}
               style={{
-                background: m.role === "user" ? currentBubble : "rgba(255,255,255,0.08)",
+                background: m.role === "user" ? bubble : "rgba(255,255,255,0.08)",
               }}
             >
               <strong>{m.role === "user" ? "Du" : "AI"}:</strong> {m.content}
@@ -93,7 +91,7 @@ export default function ChatPage() {
           ))}
 
           {loading && (
-            <div className="typing" style={{ color: currentColor }}>
+            <div className="typing" style={{ color: light }}>
               <span>AI arbejder</span>
               <span className="dot" />
               <span className="dot" style={{ animationDelay: "0.15s" }} />
@@ -118,7 +116,7 @@ export default function ChatPage() {
             type="submit"
             disabled={loading || !input.trim()}
             className="btn"
-            style={{ background: currentColor }}
+            style={{ background: color }}
           >
             Send
           </button>
@@ -164,11 +162,32 @@ export default function ChatPage() {
           margin: 20px 0 12px;
           padding: 8px 16px;
           border: 2px solid;
-          border-radius: 8px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           gap: 10px;
           color: #fff;
+          background: rgba(255,255,255,0.03);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .dropdown {
+          border-radius: 10px;
+          padding: 6px 12px;
+          font-size: 15px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .dropdown:hover {
+          filter: brightness(1.1);
+        }
+
+        .dropdown option {
+          background: #1a1f30;
+          color: #fff;
+          border: none;
         }
 
         .chat {
@@ -188,7 +207,7 @@ export default function ChatPage() {
           overflow-y: auto;
           padding: 16px;
           scrollbar-width: thin;
-          scrollbar-color: currentColor transparent;
+          scrollbar-color: ${light} transparent;
         }
 
         .msg {
@@ -207,7 +226,7 @@ export default function ChatPage() {
 
         .dot {
           width: 7px; height: 7px; border-radius: 50%;
-          background: currentColor;
+          background: ${light};
           display: inline-block;
           animation: dance 1s infinite ease-in-out;
         }
