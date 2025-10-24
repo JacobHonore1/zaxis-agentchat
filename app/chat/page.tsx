@@ -16,10 +16,11 @@ export default function ChatPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
 
+  // Tonede agentfarver
   const agentStyles: Record<Agent, { color: string; bubble: string }> = {
-    SoMe: { color: "#2563eb", bubble: "#1e3a8a" },
-    Strategi: { color: "#16a34a", bubble: "#065f46" },
-    "Firma Guidelines": { color: "#7e22ce", bubble: "#4c1d95" },
+    SoMe: { color: "#3b82f6", bubble: "#1e3a8a" },            // blødere blå
+    Strategi: { color: "#22c55e", bubble: "#14532d" },        // dæmpet grøn
+    "Firma Guidelines": { color: "#8b5cf6", bubble: "#4c1d95" } // dæmpet lilla
   };
 
   async function onSend(e: React.FormEvent) {
@@ -56,7 +57,6 @@ export default function ChatPage() {
     <div className="shell">
       <div className="top">
         <Image src="/logo.png" alt="Logo" width={160} height={50} priority className="logo" />
-        <h2 className="tagline">assistenter der skaber værdi</h2>
       </div>
 
       <div className="agent-select" style={{ borderColor: currentColor }}>
@@ -65,9 +65,11 @@ export default function ChatPage() {
           value={agent}
           onChange={(e) => setAgent(e.target.value as Agent)}
           style={{
-            borderColor: currentColor,
+            background: currentColor,
             color: "#fff",
-            background: "transparent",
+            border: `1px solid ${currentColor}`,
+            borderRadius: "6px",
+            padding: "4px 8px",
           }}
         >
           <option value="SoMe">SoMe</option>
@@ -155,11 +157,11 @@ export default function ChatPage() {
           text-align: center;
           margin-top: 30px;
         }
+
         .logo { width: 160px; height: auto; }
-        .tagline { font-size: 14px; opacity: 0.8; margin: 6px 0 18px; }
 
         .agent-select {
-          margin-bottom: 12px;
+          margin: 20px 0 12px;
           padding: 8px 16px;
           border: 2px solid;
           border-radius: 8px;
@@ -167,13 +169,6 @@ export default function ChatPage() {
           align-items: center;
           gap: 10px;
           color: #fff;
-        }
-
-        .agent-select select {
-          border: 1px solid currentColor;
-          border-radius: 6px;
-          padding: 4px 8px;
-          cursor: pointer;
         }
 
         .chat {
@@ -247,6 +242,11 @@ export default function ChatPage() {
           padding: 12px 18px;
           font-weight: 600;
           cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+          opacity: 0.9;
         }
 
         @media (max-width: 768px) {
