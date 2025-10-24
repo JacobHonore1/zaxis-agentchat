@@ -31,7 +31,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }), // <— matcher API-kontrakten
+        body: JSON.stringify({ message: text }),
       });
 
       const data = await res.json();
@@ -39,8 +39,19 @@ export default function ChatPage() {
         throw new Error(data?.error || `Server error (${res.status})`);
       }
 
-      const reply = (data?.reply ?? "").toString();
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+      // Understøt flere mulige feltnavne fra backend
+      const reply =
+        data?.reply ??
+        data?.output_text ??
+        data?.general_summary ??
+        data?.internal_answer ??
+        data?.external_answer ??
+        "AI returned no content.";
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: reply.toString() },
+      ]);
     } catch (err: any) {
       setError(err?.message || "Ukendt fejl fra serveren.");
     } finally {
@@ -87,9 +98,7 @@ export default function ChatPage() {
           </div>
         ))}
 
-        {loading && (
-          <div style={{ color: "#6b7280" }}>AI skriver…</div>
-        )}
+        {loading && <div style={{ color: "#6b7280" }}>AI skriver…</div>}
 
         <div ref={endRef} />
       </div>
@@ -102,7 +111,10 @@ export default function ChatPage() {
       )}
 
       {/* Input */}
-      <form onSubmit={onSend} style={{ display: "flex", gap: 10, marginTop: 12 }}>
+      <form
+        onSubmit={onSend}
+        style={{ display: "flex", gap: 10, marginTop: 12 }}
+      >
         <input
           type="text"
           placeholder="Skriv besked…"
@@ -135,4 +147,3 @@ export default function ChatPage() {
     </div>
   );
 }
-
