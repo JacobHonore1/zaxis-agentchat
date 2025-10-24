@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ArrowUp } from "lucide-react";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -11,11 +10,11 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pulse, setPulse] = useState(false);
-  const [sentGlow, setSentGlow] = useState(false);
-
   const endRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
@@ -27,10 +26,6 @@ export default function ChatPage() {
     setLoading(true);
     setError(null);
 
-    // Vis kort glow på knap
-    setSentGlow(true);
-    setTimeout(() => setSentGlow(false), 400);
-
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -41,8 +36,6 @@ export default function ChatPage() {
       if (!res.ok) throw new Error(data.error || "Fejl i serveren");
 
       setMessages((p) => [...p, { role: "assistant", content: data.reply || "..." }]);
-      setPulse(true);
-      setTimeout(() => setPulse(false), 1500);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -61,7 +54,7 @@ export default function ChatPage() {
         <h2 className="tagline">assistenter der skaber værdi</h2>
       </div>
 
-      <div className={`chat ${pulse ? "pulse" : ""}`}>
+      <div className="chat">
         <div className="scroll">
           {messages.length === 0 && (
             <div className="placeholder">Skriv en besked herunder for at starte.</div>
@@ -95,14 +88,8 @@ export default function ChatPage() {
             disabled={loading}
             className="input"
           />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className={`btn ${sentGlow ? "glow" : ""}`}
-            aria-label="Send"
-          >
-            <span className="btnText">Send</span>
-            <ArrowUp className="btnIcon" size={20} />
+          <button type="submit" disabled={loading || !input.trim()} className="btn">
+            Send
           </button>
         </form>
       </div>
@@ -191,7 +178,6 @@ export default function ChatPage() {
           border-radius: 10px;
           margin-bottom: 8px;
           word-break: break-word;
-          animation: fadeIn 0.3s ease-in;
         }
         .msg.me { background: #1e3a8a; align-self: flex-end; }
         .msg.ai { background: rgba(255, 255, 255, 0.08); }
@@ -236,43 +222,20 @@ export default function ChatPage() {
           background: var(--blue);
           color: #fff;
           border: none;
-          border-radius: 50%;
-          width: 44px;
-          height: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: transform 0.15s ease, box-shadow 0.25s ease;
+          border-radius: 8px;
+          padding: 12px 18px;
+          font-weight: 600;
           cursor: pointer;
         }
         .btn:active {
-          transform: scale(0.88);
-        }
-        .btn.glow {
-          box-shadow: 0 0 15px rgba(37, 99, 235, 0.8);
-          animation: pulseGlow 0.4s ease;
-        }
-        @keyframes pulseGlow {
-          0% { box-shadow: 0 0 0 rgba(37, 99, 235, 0); }
-          40% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.8); transform: scale(1.1); }
-          100% { box-shadow: 0 0 0 rgba(37, 99, 235, 0); transform: scale(1); }
+          transform: scale(0.95);
         }
 
-        .btnText { display: none; }
-        .btnIcon { display: block; }
-
-        @media (min-width: 769px) {
-          .btn {
-            border-radius: 8px;
-            width: auto;
-            height: auto;
-            padding: 12px 18px;
-          }
-          .btnText { display: inline; margin-right: 6px; font-weight: 600; }
-          .btnIcon { display: none; }
+        @media (max-width: 768px) {
+          .chat { border-radius: 0; max-width: 100%; height: 100vh; }
+          .scroll { padding-bottom: 100px; }
+          .inputRow { position: fixed; bottom: 0; left: 0; width: 100%; }
         }
-
-        @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
       `}</style>
     </div>
   );
