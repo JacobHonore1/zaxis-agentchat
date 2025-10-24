@@ -4,17 +4,23 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
 type Msg = { role: "user" | "assistant"; content: string };
-type Agent = "Knowledge" | "Creative" | "Technical";
+type Agent = "SoMe" | "Strategi" | "Firma Guidelines";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [agent, setAgent] = useState<Agent>("Knowledge");
+  const [agent, setAgent] = useState<Agent>("SoMe");
 
   const endRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+
+  const agentStyles: Record<Agent, { color: string; bubble: string }> = {
+    SoMe: { color: "#2563eb", bubble: "#1e3a8a" },
+    Strategi: { color: "#16a34a", bubble: "#065f46" },
+    "Firma Guidelines": { color: "#7e22ce", bubble: "#4c1d95" },
+  };
 
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
@@ -43,40 +49,45 @@ export default function ChatPage() {
     }
   }
 
-  return (
-    <div className="shell">
-      <header className="header">
-        <span className="header-text">Virtoo</span>
-      </header>
+  const currentColor = agentStyles[agent].color;
+  const currentBubble = agentStyles[agent].bubble;
 
+  return (
+    <div className="shell" style={{ borderTop: `4px solid ${currentColor}` }}>
       <div className="top">
         <Image src="/logo.png" alt="Logo" width={160} height={50} priority className="logo" />
         <h2 className="tagline">assistenter der skaber værdi</h2>
       </div>
 
-      <div className="agent-select">
-        <label>Vælg agent: </label>
-        <select value={agent} onChange={(e) => setAgent(e.target.value as Agent)}>
-          <option value="Knowledge">Knowledge Agent</option>
-          <option value="Creative">Creative Agent</option>
-          <option value="Technical">Technical Agent</option>
+      <div className="agent-select" style={{ borderColor: currentColor }}>
+        <label>Vælg agent:</label>
+        <select
+          value={agent}
+          onChange={(e) => setAgent(e.target.value as Agent)}
+          style={{ borderColor: currentColor, color: currentColor }}
+        >
+          <option value="SoMe">SoMe</option>
+          <option value="Strategi">Strategi</option>
+          <option value="Firma Guidelines">Firma Guidelines</option>
         </select>
       </div>
 
       <div className="chat">
         <div className="scroll">
-          {messages.length === 0 && (
-            <div className="placeholder">Skriv en besked herunder for at starte.</div>
-          )}
-
           {messages.map((m, i) => (
-            <div key={i} className={`msg ${m.role === "user" ? "me" : "ai"}`}>
+            <div
+              key={i}
+              className={`msg ${m.role === "user" ? "me" : "ai"}`}
+              style={{
+                background: m.role === "user" ? currentBubble : "rgba(255,255,255,0.08)",
+              }}
+            >
               <strong>{m.role === "user" ? "Du" : "AI"}:</strong> {m.content}
             </div>
           ))}
 
           {loading && (
-            <div className="typing">
+            <div className="typing" style={{ color: currentColor }}>
               <span>AI arbejder</span>
               <span className="dot" />
               <span className="dot" style={{ animationDelay: "0.15s" }} />
@@ -91,7 +102,7 @@ export default function ChatPage() {
         <form onSubmit={onSend} className="inputRow">
           <input
             type="text"
-            placeholder="Skriv din besked…"
+            placeholder="Skriv din besked..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={loading}
@@ -107,7 +118,6 @@ export default function ChatPage() {
         :root {
           --bg: #0b1020;
           --panel: #141b2d;
-          --blue: #2563eb;
           --text: #ffffff;
           --muted: #9ca3af;
           --radius: 16px;
@@ -130,39 +140,32 @@ export default function ChatPage() {
           background: var(--bg);
           color: var(--text);
           font-family: Inter, sans-serif;
+          transition: border-color 0.3s ease;
         }
 
-        .header {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          background: rgba(11, 16, 32, 0.95);
+        .top {
           text-align: center;
-          padding: 8px 0;
-          z-index: 100;
+          margin-top: 30px;
         }
-
-        .header-text { font-size: 14px; color: var(--muted); letter-spacing: 1px; }
-
-        .top { text-align: center; margin-top: 60px; }
         .logo { width: 160px; height: auto; }
         .tagline { font-size: 14px; opacity: 0.8; margin: 6px 0 18px; }
 
         .agent-select {
-          margin-top: 10px;
-          background: #111827;
-          padding: 10px 16px;
+          margin-bottom: 12px;
+          padding: 8px 16px;
+          border: 2px solid;
           border-radius: 8px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+          display: flex;
+          align-items: center;
+          gap: 10px;
         }
         .agent-select select {
-          margin-left: 6px;
-          padding: 6px;
+          background: transparent;
+          color: inherit;
+          border: 1px solid currentColor;
           border-radius: 6px;
-          background: var(--panel);
-          color: var(--text);
-          border: 1px solid #1e293b;
+          padding: 4px 8px;
+          cursor: pointer;
         }
 
         .chat {
@@ -173,7 +176,6 @@ export default function ChatPage() {
           box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
           display: flex;
           flex-direction: column;
-          margin-top: 10px;
           flex: 1;
           overflow: hidden;
         }
@@ -183,30 +185,30 @@ export default function ChatPage() {
           overflow-y: auto;
           padding: 16px;
           scrollbar-width: thin;
-          scrollbar-color: var(--blue) transparent;
+          scrollbar-color: currentColor transparent;
         }
 
         .msg {
           padding: 10px 14px;
           border-radius: 10px;
           margin-bottom: 8px;
+          word-break: break-word;
         }
-        .msg.me { background: #1e3a8a; align-self: flex-end; }
-        .msg.ai { background: rgba(255, 255, 255, 0.08); }
 
         .typing {
           display: flex;
           align-items: center;
           gap: 6px;
-          color: var(--blue);
           margin-top: 4px;
         }
+
         .dot {
           width: 7px; height: 7px; border-radius: 50%;
-          background: var(--blue);
+          background: currentColor;
           display: inline-block;
           animation: dance 1s infinite ease-in-out;
         }
+
         @keyframes dance {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
           30% { transform: translateY(-6px); opacity: 1; }
@@ -233,7 +235,7 @@ export default function ChatPage() {
         }
 
         .btn {
-          background: var(--blue);
+          background: currentColor;
           color: #fff;
           border: none;
           border-radius: 8px;
