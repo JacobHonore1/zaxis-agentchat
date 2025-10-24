@@ -10,6 +10,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pulse, setPulse] = useState(false); // 👈 Tilføjet: visuel effekt når svar er færdigt
 
   const endRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -19,6 +20,7 @@ export default function ChatPage() {
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setPulse(false);
 
     const text = input.trim();
     if (!text || loading) return;
@@ -39,6 +41,10 @@ export default function ChatPage() {
 
       const reply = (data?.reply ?? "").toString();
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+
+      // 👇 Trigger visuel “færdig”-effekt
+      setTimeout(() => setPulse(true), 100);
+      setTimeout(() => setPulse(false), 1600);
     } catch (err: any) {
       setError(err?.message || "Ukendt fejl fra serveren.");
     } finally {
@@ -104,6 +110,7 @@ export default function ChatPage() {
 
       {/* Chat container */}
       <div
+        className={`chat-container ${pulse ? "pulse" : ""}`} // 👈 Pulse animation
         style={{
           width: "90%",
           maxWidth: 700,
@@ -116,6 +123,7 @@ export default function ChatPage() {
           height: "65vh",
           overflow: "hidden",
           animation: "fadeInUp 1s ease",
+          transition: "box-shadow 0.5s ease-in-out",
         }}
       >
         {/* Scrollområde */}
@@ -255,6 +263,17 @@ export default function ChatPage() {
           display: inline-block;
           animation: bounce 1s infinite ease-in-out;
           box-shadow: 0 0 6px rgba(59,130,246,0.7);
+        }
+
+        /* 👇 AI færdig puls-glow */
+        @keyframes pulseGlow {
+          0% { box-shadow: 0 0 0px rgba(37,99,235,0); }
+          40% { box-shadow: 0 0 25px rgba(37,99,235,0.4); }
+          100% { box-shadow: 0 0 0px rgba(37,99,235,0); }
+        }
+
+        .pulse {
+          animation: pulseGlow 1.5s ease-out;
         }
       `}</style>
     </div>
