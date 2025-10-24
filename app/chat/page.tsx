@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { ArrowUp } from "lucide-react";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -19,7 +20,8 @@ export default function ChatPage() {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
-    setMessages((p) => [...p, { role: "user", content: input.trim() }]);
+    const text = input.trim();
+    setMessages((p) => [...p, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
     setError(null);
@@ -28,7 +30,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input.trim() }),
+        body: JSON.stringify({ message: text }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Fejl i serveren");
@@ -45,8 +47,12 @@ export default function ChatPage() {
 
   return (
     <div className="shell">
+      <header className="header">
+        <span className="header-text">Virtoo</span>
+      </header>
+
       <div className="top">
-        <Image src="/logo.png" alt="Logo" width={180} height={60} priority className="logo" />
+        <Image src="/logo.png" alt="Logo" width={160} height={50} priority className="logo" />
         <h2 className="tagline">assistenter der skaber værdi</h2>
       </div>
 
@@ -55,6 +61,7 @@ export default function ChatPage() {
           {messages.length === 0 && (
             <div className="placeholder">Skriv en besked herunder for at starte.</div>
           )}
+
           {messages.map((m, i) => (
             <div key={i} className={`msg ${m.role === "user" ? "me" : "ai"}`}>
               <strong>{m.role === "user" ? "Du" : "AI"}:</strong> {m.content}
@@ -83,8 +90,14 @@ export default function ChatPage() {
             disabled={loading}
             className="input"
           />
-          <button type="submit" className="btn" disabled={loading}>
-            {loading ? "..." : "Send"}
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="btn"
+            aria-label="Send"
+          >
+            <span className="btnText">Send</span>
+            <ArrowUp className="btnIcon" size={20} />
           </button>
         </form>
       </div>
@@ -96,7 +109,7 @@ export default function ChatPage() {
           --blue: #2563eb;
           --text: #ffffff;
           --muted: #9ca3af;
-          --radius: 18px;
+          --radius: 16px;
         }
 
         html, body {
@@ -118,19 +131,29 @@ export default function ChatPage() {
           font-family: Inter, sans-serif;
         }
 
+        /* Fikseret header */
+        .header {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          background: rgba(11, 16, 32, 0.95);
+          text-align: center;
+          padding: 8px 0;
+          z-index: 100;
+        }
+        .header-text {
+          font-size: 14px;
+          color: var(--muted);
+          letter-spacing: 1px;
+        }
+
         .top {
           text-align: center;
-          margin-top: 30px;
+          margin-top: 60px;
         }
-        .logo {
-          width: 180px;
-          height: auto;
-        }
-        .tagline {
-          margin-top: 4px;
-          font-size: 14px;
-          opacity: 0.8;
-        }
+        .logo { width: 160px; height: auto; }
+        .tagline { font-size: 14px; opacity: 0.8; margin: 6px 0 18px; }
 
         .chat {
           width: 100%;
@@ -140,7 +163,7 @@ export default function ChatPage() {
           box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
           display: flex;
           flex-direction: column;
-          margin-top: 20px;
+          margin-top: 10px;
           flex: 1;
           overflow: hidden;
         }
@@ -152,10 +175,7 @@ export default function ChatPage() {
           scrollbar-width: thin;
           scrollbar-color: var(--blue) transparent;
         }
-
-        .scroll::-webkit-scrollbar {
-          width: 6px;
-        }
+        .scroll::-webkit-scrollbar { width: 5px; }
         .scroll::-webkit-scrollbar-thumb {
           background: var(--blue);
           border-radius: 3px;
@@ -166,27 +186,19 @@ export default function ChatPage() {
           border-radius: 10px;
           margin-bottom: 8px;
           word-break: break-word;
-          animation: fadeIn 0.3s ease-in;
         }
-        .msg.me {
-          background: #1e3a8a;
-          align-self: flex-end;
-        }
-        .msg.ai {
-          background: rgba(255, 255, 255, 0.08);
-        }
+        .msg.me { background: #1e3a8a; align-self: flex-end; }
+        .msg.ai { background: rgba(255, 255, 255, 0.08); }
 
         .typing {
           display: flex;
           align-items: center;
           gap: 6px;
           color: var(--blue);
-          margin: 4px 0;
+          margin-top: 4px;
         }
         .dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
+          width: 7px; height: 7px; border-radius: 50%;
           background: var(--blue);
           display: inline-block;
           animation: dance 1s infinite ease-in-out;
@@ -218,31 +230,33 @@ export default function ChatPage() {
           background: var(--blue);
           color: #fff;
           border: none;
-          border-radius: 8px;
-          padding: 12px 18px;
-          font-weight: 600;
+          border-radius: 50%;
+          width: 42px;
+          height: 42px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: 0.2s;
           cursor: pointer;
         }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* Responsiv styling */
-        @media (max-width: 768px) {
-          .shell { padding: 0 10px; }
-          .logo { width: 140px; }
-          .tagline { font-size: 13px; }
-          .chat {
-            border-radius: 12px;
-            height: calc(100vh - 160px);
-            margin-top: 10px;
+        .btnText { display: none; }
+        .btnIcon { display: block; }
+
+        /* Desktop viser tekst */
+        @media (min-width: 769px) {
+          .btn {
+            border-radius: 8px;
+            width: auto;
+            height: auto;
+            padding: 12px 18px;
           }
-          .inputRow { padding: 8px; }
-          .input { font-size: 15px; padding: 10px; }
-          .btn { padding: 10px 14px; font-size: 15px; }
+          .btnText { display: inline; margin-right: 6px; font-weight: 600; }
+          .btnIcon { display: none; }
         }
 
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
       `}</style>
     </div>
   );
