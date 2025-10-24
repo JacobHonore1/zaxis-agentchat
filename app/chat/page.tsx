@@ -53,7 +53,7 @@ export default function ChatPage() {
   const currentBubble = agentStyles[agent].bubble;
 
   return (
-    <div className="shell" style={{ borderTop: `4px solid ${currentColor}` }}>
+    <div className="shell">
       <div className="top">
         <Image src="/logo.png" alt="Logo" width={160} height={50} priority className="logo" />
         <h2 className="tagline">assistenter der skaber værdi</h2>
@@ -64,7 +64,11 @@ export default function ChatPage() {
         <select
           value={agent}
           onChange={(e) => setAgent(e.target.value as Agent)}
-          style={{ borderColor: currentColor, color: currentColor }}
+          style={{
+            borderColor: currentColor,
+            color: "#fff",
+            background: "transparent",
+          }}
         >
           <option value="SoMe">SoMe</option>
           <option value="Strategi">Strategi</option>
@@ -72,7 +76,7 @@ export default function ChatPage() {
         </select>
       </div>
 
-      <div className="chat">
+      <div className="chat" style={{ border: `2px solid ${currentColor}` }}>
         <div className="scroll">
           {messages.map((m, i) => (
             <div
@@ -108,7 +112,12 @@ export default function ChatPage() {
             disabled={loading}
             className="input"
           />
-          <button type="submit" disabled={loading || !input.trim()} className="btn">
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="btn"
+            style={{ background: currentColor }}
+          >
             Send
           </button>
         </form>
@@ -140,7 +149,6 @@ export default function ChatPage() {
           background: var(--bg);
           color: var(--text);
           font-family: Inter, sans-serif;
-          transition: border-color 0.3s ease;
         }
 
         .top {
@@ -158,10 +166,10 @@ export default function ChatPage() {
           display: flex;
           align-items: center;
           gap: 10px;
+          color: #fff;
         }
+
         .agent-select select {
-          background: transparent;
-          color: inherit;
           border: 1px solid currentColor;
           border-radius: 6px;
           padding: 4px 8px;
@@ -220,8 +228,6 @@ export default function ChatPage() {
           padding: 10px;
           border-top: 1px solid rgba(255, 255, 255, 0.1);
           background: #0f172a;
-          position: sticky;
-          bottom: 0;
         }
 
         .input {
@@ -235,7 +241,6 @@ export default function ChatPage() {
         }
 
         .btn {
-          background: currentColor;
           color: #fff;
           border: none;
           border-radius: 8px;
