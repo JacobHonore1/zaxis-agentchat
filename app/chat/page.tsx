@@ -50,34 +50,59 @@ export default function ChatPage() {
     <div
       style={{
         backgroundColor: "#0b1020",
-        minHeight: "100vh",
+        width: "100vw",
+        height: "100vh",
         margin: 0,
         padding: 0,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
         color: "#ffffff",
         fontFamily: "Inter, sans-serif",
       }}
     >
-      <Image
-        src="/logo.png"
-        alt="Logo"
-        width={200}
-        height={70}
-        style={{
-          marginTop: 60,
-          marginBottom: 8,
-          animation: "fadeIn 1.2s ease-in-out",
-        }}
-      />
+      {/* Logo + glow */}
+      <div style={{ position: "relative", marginTop: 60, marginBottom: 8 }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 260,
+            height: 100,
+            background:
+              "radial-gradient(circle at center, rgba(37,99,235,0.25) 0%, rgba(11,16,32,0) 70%)",
+            filter: "blur(25px)",
+            zIndex: 0,
+          }}
+        />
+        <Image
+          src="/logo.png"
+          alt="Logo"
+          width={200}
+          height={70}
+          style={{
+            position: "relative",
+            zIndex: 1,
+            animation: "fadeIn 1.2s ease-in-out",
+          }}
+        />
+      </div>
 
-      <h2 style={{ fontSize: 16, opacity: 0.8, marginBottom: 28, animation: "fadeIn 2s" }}>
+      <h2
+        style={{
+          fontSize: 16,
+          opacity: 0.8,
+          marginBottom: 28,
+          animation: "fadeIn 2s",
+        }}
+      >
         - assistenter der skaber værdi -
       </h2>
 
+      {/* Chat container */}
       <div
         style={{
           width: "90%",
@@ -88,11 +113,13 @@ export default function ChatPage() {
           boxShadow: "0 0 30px rgba(0,0,0,0.6)",
           display: "flex",
           flexDirection: "column",
-          minHeight: 450,
+          height: "65vh",
+          overflow: "hidden",
           animation: "fadeInUp 1s ease",
         }}
       >
-        <div style={{ flex: 1, overflowY: "auto", paddingRight: 8 }}>
+        {/* Scrollområde */}
+        <div className="chat-scroll">
           {messages.length === 0 && (
             <div style={{ color: "#9ca3af", textAlign: "center", marginTop: 40 }}>
               Skriv en besked herunder for at starte.
@@ -116,11 +143,20 @@ export default function ChatPage() {
           ))}
 
           {loading && (
-            <div style={{ color: "#3b82f6", display: "flex", gap: 4 }}>
-              <span>AI skriver</span>
-              <span className="dot" style={dotStyle}></span>
-              <span className="dot" style={{ ...dotStyle, animationDelay: "0.2s" }}></span>
-              <span className="dot" style={{ ...dotStyle, animationDelay: "0.4s" }}></span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginTop: 4,
+                color: "#3b82f6",
+                fontSize: 14,
+              }}
+            >
+              <span>AI arbejder</span>
+              <div className="dot" style={dotStyle}></div>
+              <div className="dot" style={{ ...dotStyle, animationDelay: "0.15s" }}></div>
+              <div className="dot" style={{ ...dotStyle, animationDelay: "0.3s" }}></div>
             </div>
           )}
 
@@ -167,6 +203,34 @@ export default function ChatPage() {
       </div>
 
       <style>{`
+        html, body {
+          margin: 0;
+          padding: 0;
+          background-color: #0b1020;
+          overflow: hidden;
+          height: 100%;
+        }
+
+        .chat-scroll {
+          flex: 1;
+          overflow-y: auto;
+          padding-right: 8px;
+          scrollbar-width: thin;
+          scrollbar-color: #2563eb #0f172a;
+        }
+
+        .chat-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+          background: #0f172a;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+          background-color: #2563eb;
+          border-radius: 4px;
+          box-shadow: 0 0 4px rgba(37,99,235,0.5);
+        }
+
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(5px); }
           to { opacity: 1; transform: translateY(0); }
@@ -177,9 +241,10 @@ export default function ChatPage() {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes blink {
-          0%, 80%, 100% { opacity: 0; }
-          40% { opacity: 1; }
+        /* DANSENDE PRIKKER */
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+          40% { transform: translateY(-6px); opacity: 1; }
         }
 
         .dot {
@@ -188,7 +253,8 @@ export default function ChatPage() {
           background-color: #3b82f6;
           border-radius: 50%;
           display: inline-block;
-          animation: blink 1.2s infinite ease-in-out both;
+          animation: bounce 1s infinite ease-in-out;
+          box-shadow: 0 0 6px rgba(59,130,246,0.7);
         }
       `}</style>
     </div>
@@ -201,5 +267,6 @@ const dotStyle: React.CSSProperties = {
   backgroundColor: "#3b82f6",
   borderRadius: "50%",
   display: "inline-block",
-  animation: "blink 1.2s infinite ease-in-out both",
+  animation: "bounce 1s infinite ease-in-out",
+  boxShadow: "0 0 6px rgba(59,130,246,0.7)",
 };
