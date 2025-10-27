@@ -6,8 +6,6 @@ import Image from "next/image";
 type Msg = { role: "user" | "assistant"; content: string };
 type Agent = "SoMe" | "Strategi" | "Firma Guidelines";
 
-const AGENTS: Agent[] = ["SoMe", "Strategi", "Firma Guidelines"];
-
 const agentStyles: Record<
   Agent,
   { color: string; bubble: string; light: string; text: string }
@@ -22,24 +20,10 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [agent, setAgent] = useState<Agent>("SoMe");
-  const [open, setOpen] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState("100vh");
-
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Mobile viewport fix
-  useEffect(() => {
-    const handleResize = () => {
-      setViewportHeight(`${window.innerHeight}px`);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Scroll always to bottom
+  // Scroll til bunden ved nye beskeder
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
@@ -47,20 +31,12 @@ export default function ChatPage() {
     });
   }, [messages]);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (!dropdownRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim()) return;
-    const text = input.trim();
 
-    setMessages((p) => [...p, { role: "user", content: text }]);
+    const text = input.trim();
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
 
@@ -70,23 +46,22 @@ export default function ChatPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: `${agent}: ${text}` }),
       });
-      const data = await res.json();
 
+      const data = await res.json();
       const formatted =
         (data.reply || "")
           .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
           .replace(/\n\s*\n/g, "<br/><br/>")
           .replace(/\n/g, "<br/>");
 
-      setMessages((p) => [
-        ...p,
+      setMessages((prev) => [
+        ...prev,
         { role: "assistant", content: formatted || "..." },
       ]);
-
       inputRef.current?.focus();
     } catch {
-      setMessages((p) => [
-        ...p,
+      setMessages((prev) => [
+        ...prev,
         { role: "assistant", content: "Der opstod en fejl." },
       ]);
     } finally {
@@ -97,48 +72,27 @@ export default function ChatPage() {
   const { color, bubble, light, text } = agentStyles[agent];
 
   return (
-    <div className="page" style={{ height: viewportHeight }}>
+    <div className="page" style={{ background: "#0b1020" }}>
       <header>
         <Image src="/logo.png" alt="Logo" width={150} height={50} priority />
       </header>
 
-      <div className="selectWrap" ref={dropdownRef}>
-        <span className="label">Vælg agent:</span>
-        <button
-          className="selectBtn"
-          style={{ background: color, borderColor: light, color: text }}
-          onClick={() => setOpen((v) => !v)}
+      <div className="selector">
+        <label htmlFor="agent">Vælg agent:</label>
+        <select
+          id="agent"
+          value={agent}
+          onChange={(e) => setAgent(e.target.value as Agent)}
+          style={{
+            background: color,
+            color: text,
+            borderColor: light,
+          }}
         >
-          {agent}
-          <svg
-            className={`chev ${open ? "up" : ""}`}
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-          >
-            <path fill={text} d="M7 10l5 5 5-5z" />
-          </svg>
-        </button>
-
-        <div className={`menu ${open ? "open" : ""}`} style={{ borderColor: light }}>
-          {AGENTS.map((a) => (
-            <div
-              key={a}
-              className="item"
-              style={{
-                background: agentStyles[a].color,
-                color: agentStyles[a].text,
-                borderColor: agentStyles[a].light,
-              }}
-              onClick={() => {
-                setAgent(a);
-                setOpen(false);
-              }}
-            >
-              {a}
-            </div>
-          ))}
-        </div>
+          <option value="SoMe">SoMe</option>
+          <option value="Strategi">Strategi</option>
+          <option value="Firma Guidelines">Firma Guidelines</option>
+        </select>
       </div>
 
       <div className="chat" style={{ borderColor: light }}>
@@ -153,6 +107,7 @@ export default function ChatPage() {
               dangerouslySetInnerHTML={{ __html: m.content }}
             />
           ))}
+
           {loading && (
             <div className="typing" style={{ color: light }}>
               <span>AI arbejder</span>
@@ -163,17 +118,16 @@ export default function ChatPage() {
           )}
         </div>
 
-        <form onSubmit={onSend} className="inputRow">
+        <form onSubmit={onSend} className="inputRow" style={{ borderColor: light }}>
           <input
             ref={inputRef}
             type="text"
             placeholder="Skriv din besked..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            style={{ borderColor: light }}
           />
-          <button type="submit" style={{ background: color }}>
-            Send
+          <button type="submit" disabled={loading}>
+            ←
           </button>
         </form>
       </div>
@@ -182,45 +136,44 @@ export default function ChatPage() {
         html, body {
           margin: 0;
           height: 100%;
-          background: #0b1020;
-          color: #fff;
+          overflow: hidden;
           font-family: Inter, sans-serif;
-          overscroll-behavior: none;
+          color: white;
+          background: #0b1020;
         }
 
         .page {
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: flex-start;
-          width: 100%;
-          padding-bottom: env(safe-area-inset-bottom);
+          height: 100vh;
+          overflow: hidden;
         }
 
         header {
           margin-top: 20px;
-          text-align: center;
         }
 
-        .selectWrap {
-          position: relative;
-          margin: 12px 0;
+        .selector {
+          margin: 10px 0 16px;
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
         }
 
-        .selectBtn {
+        .selector label {
+          font-size: 15px;
+          color: #cbd5e1;
+        }
+
+        .selector select {
+          padding: 8px 12px;
+          border-radius: 8px;
           border: 2px solid;
-          border-radius: 14px;
-          padding: 8px 14px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          justify-content: space-between;
-          min-width: 160px;
-          transition: all 0.25s ease;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          font-size: 15px;
+          font-weight: 500;
+          cursor: pointer;
+          outline: none;
         }
 
         .chat {
@@ -228,14 +181,14 @@ export default function ChatPage() {
           flex-direction: column;
           width: 90%;
           max-width: 700px;
-          flex: 1;
+          flex-grow: 1;
           border: 2px solid;
           border-radius: 16px;
           background: #141b2d;
           box-shadow: 0 0 25px rgba(0,0,0,0.4);
           overflow: hidden;
-          margin-bottom: 10px;
-          position: relative;
+          padding-bottom: 16px;
+          margin-bottom: 20px;
         }
 
         .scroll {
@@ -266,36 +219,43 @@ export default function ChatPage() {
 
         .inputRow {
           display: flex;
-          padding: 10px;
-          background: linear-gradient(180deg, #1e2638 0%, #101628 100%);
+          align-items: center;
           gap: 8px;
           border-top: 1px solid rgba(255,255,255,0.1);
+          padding: 10px;
+          background: #0f172a;
+          border-radius: 0 0 16px 16px;
+          margin-top: auto;
           position: sticky;
           bottom: 0;
-          box-shadow: 0 -2px 12px rgba(0,0,0,0.5);
-          z-index: 50;
         }
 
         .inputRow input {
           flex: 1;
           padding: 12px;
+          border-radius: 8px;
           border: 2px solid;
-          border-radius: 10px;
-          background: #0f172a;
-          color: #fff;
-          font-size: 16px;
-          caret-color: #3b82f6;
+          background: #1e2638;
+          color: white;
+          font-size: 15px;
+          outline: none;
           box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
         }
 
         .inputRow button {
+          background: none;
           border: none;
-          color: #fff;
-          border-radius: 10px;
-          padding: 10px 18px;
-          font-weight: 600;
+          color: white;
+          font-size: 20px;
+          font-weight: bold;
           cursor: pointer;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+          padding: 4px 10px;
+          border-radius: 8px;
+          transition: background 0.2s ease;
+        }
+
+        .inputRow button:hover {
+          background: rgba(255,255,255,0.1);
         }
 
         @keyframes fadeIn {
@@ -303,9 +263,16 @@ export default function ChatPage() {
         }
 
         @media (max-width: 768px) {
-          .chat { width: 95%; max-height: none; }
-          .inputRow input { font-size: 15px; }
-          .inputRow button { padding: 8px 14px; }
+          .chat {
+            width: 95%;
+            margin-bottom: 30px;
+          }
+          .inputRow {
+            padding: 8px;
+          }
+          .inputRow input {
+            font-size: 14px;
+          }
         }
       `}</style>
     </div>
