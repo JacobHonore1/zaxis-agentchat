@@ -23,11 +23,23 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [agent, setAgent] = useState<Agent>("SoMe");
   const [open, setOpen] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState("100vh");
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  // Mobile viewport fix
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportHeight(`${window.innerHeight}px`);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Scroll always to bottom
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
@@ -85,7 +97,7 @@ export default function ChatPage() {
   const { color, bubble, light, text } = agentStyles[agent];
 
   return (
-    <div className="page">
+    <div className="page" style={{ height: viewportHeight }}>
       <header>
         <Image src="/logo.png" alt="Logo" width={150} height={50} priority />
       </header>
@@ -170,18 +182,19 @@ export default function ChatPage() {
         html, body {
           margin: 0;
           height: 100%;
-          overflow: hidden;
           background: #0b1020;
           color: #fff;
           font-family: Inter, sans-serif;
+          overscroll-behavior: none;
         }
 
         .page {
           display: flex;
           flex-direction: column;
           align-items: center;
-          height: 100vh;
-          padding-bottom: 10px; /* fast luft i bunden */
+          justify-content: flex-start;
+          width: 100%;
+          padding-bottom: env(safe-area-inset-bottom);
         }
 
         header {
@@ -210,39 +223,18 @@ export default function ChatPage() {
           box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        .menu {
-          position: absolute;
-          top: calc(100% + 6px);
-          left: 70px;
-          width: 200px;
-          border: 2px solid;
-          border-radius: 14px;
-          overflow: hidden;
-          opacity: 0;
-          transform: translateY(6px) scale(0.97);
-          pointer-events: none;
-          transition: all 0.25s ease;
-        }
-
-        .menu.open {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-          pointer-events: auto;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-
         .chat {
           display: flex;
           flex-direction: column;
           width: 90%;
           max-width: 700px;
-          max-height: calc(100vh - 170px);
+          flex: 1;
           border: 2px solid;
           border-radius: 16px;
           background: #141b2d;
           box-shadow: 0 0 25px rgba(0,0,0,0.4);
           overflow: hidden;
-          margin-bottom: 14px;
+          margin-bottom: 10px;
           position: relative;
         }
 
@@ -272,33 +264,16 @@ export default function ChatPage() {
 
         .msg strong { color: #fff; }
 
-        .typing {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          margin-top: 4px;
-        }
-
-        .dot {
-          width: 7px; height: 7px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.4);
-          animation: dance 1s infinite ease-in-out;
-        }
-
-        @keyframes dance {
-          0%,60%,100% { transform: translateY(0); opacity: 0.5; }
-          30% { transform: translateY(-6px); opacity: 1; }
-        }
-
         .inputRow {
           display: flex;
           padding: 10px;
-          background: #1e2638;
+          background: linear-gradient(180deg, #1e2638 0%, #101628 100%);
           gap: 8px;
           border-top: 1px solid rgba(255,255,255,0.1);
           position: sticky;
           bottom: 0;
+          box-shadow: 0 -2px 12px rgba(0,0,0,0.5);
+          z-index: 50;
         }
 
         .inputRow input {
@@ -328,7 +303,7 @@ export default function ChatPage() {
         }
 
         @media (max-width: 768px) {
-          .chat { width: 95%; max-height: calc(100vh - 180px); }
+          .chat { width: 95%; max-height: none; }
           .inputRow input { font-size: 15px; }
           .inputRow button { padding: 8px 14px; }
         }
