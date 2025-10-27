@@ -10,9 +10,9 @@ const agentStyles: Record<
   Agent,
   { color: string; bubble: string; light: string; text: string }
 > = {
-  SoMe: { color: "#1d4ed8", bubble: "#172554", light: "#3b82f6", text: "#ffffff" },
-  Strategi: { color: "#0f766e", bubble: "#064e3b", light: "#14b8a6", text: "#f5fff9" },
-  "Firma Guidelines": { color: "#6d28d9", bubble: "#3b0764", light: "#a78bfa", text: "#ffffff" },
+  SoMe: { color: "#2a4fff", bubble: "#1b2a5a", light: "#4b6efc", text: "#ffffff" },
+  Strategi: { color: "#12846e", bubble: "#0b473d", light: "#2fd2b0", text: "#f5fff9" },
+  "Firma Guidelines": { color: "#7441d9", bubble: "#3d206e", light: "#a78bfa", text: "#ffffff" },
 };
 
 export default function ChatPage() {
@@ -23,7 +23,6 @@ export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Scroll til bunden ved nye beskeder
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
@@ -84,14 +83,26 @@ export default function ChatPage() {
           value={agent}
           onChange={(e) => setAgent(e.target.value as Agent)}
           style={{
-            background: color,
+            backgroundColor: color,
             color: text,
             borderColor: light,
           }}
         >
-          <option value="SoMe">SoMe</option>
-          <option value="Strategi">Strategi</option>
-          <option value="Firma Guidelines">Firma Guidelines</option>
+          <option value="SoMe" style={{ backgroundColor: agentStyles.SoMe.color }}>
+            SoMe
+          </option>
+          <option
+            value="Strategi"
+            style={{ backgroundColor: agentStyles.Strategi.color }}
+          >
+            Strategi
+          </option>
+          <option
+            value="Firma Guidelines"
+            style={{ backgroundColor: agentStyles["Firma Guidelines"].color }}
+          >
+            Firma Guidelines
+          </option>
         </select>
       </div>
 
@@ -174,6 +185,7 @@ export default function ChatPage() {
           font-weight: 500;
           cursor: pointer;
           outline: none;
+          appearance: auto;
         }
 
         .chat {
@@ -188,7 +200,7 @@ export default function ChatPage() {
           box-shadow: 0 0 25px rgba(0,0,0,0.4);
           overflow: hidden;
           padding-bottom: 16px;
-          margin-bottom: 20px;
+          margin-bottom: 30px; /* Luft under */
         }
 
         .scroll {
@@ -246,7 +258,7 @@ export default function ChatPage() {
           background: none;
           border: none;
           color: white;
-          font-size: 20px;
+          font-size: 22px;
           font-weight: bold;
           cursor: pointer;
           padding: 4px 10px;
@@ -265,7 +277,7 @@ export default function ChatPage() {
         @media (max-width: 768px) {
           .chat {
             width: 95%;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
           }
           .inputRow {
             padding: 8px;
