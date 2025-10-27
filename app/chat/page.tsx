@@ -181,6 +181,7 @@ export default function ChatPage() {
           flex-direction: column;
           align-items: center;
           height: 100vh;
+          padding-bottom: 10px; /* fast luft i bunden */
         }
 
         header {
@@ -206,6 +207,7 @@ export default function ChatPage() {
           justify-content: space-between;
           min-width: 160px;
           transition: all 0.25s ease;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .menu {
@@ -226,6 +228,7 @@ export default function ChatPage() {
           opacity: 1;
           transform: translateY(0) scale(1);
           pointer-events: auto;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
 
         .chat {
@@ -233,13 +236,14 @@ export default function ChatPage() {
           flex-direction: column;
           width: 90%;
           max-width: 700px;
-          max-height: calc(100vh - 160px); /* aldrig ud af vinduet */
+          max-height: calc(100vh - 170px);
           border: 2px solid;
           border-radius: 16px;
           background: #141b2d;
           box-shadow: 0 0 25px rgba(0,0,0,0.4);
           overflow: hidden;
-          margin-bottom: 24px; /* luft under chatfeltet */
+          margin-bottom: 14px;
+          position: relative;
         }
 
         .scroll {
@@ -260,13 +264,13 @@ export default function ChatPage() {
           padding: 10px 14px;
           border-radius: 10px;
           margin-bottom: 10px;
-          animation: fadeIn 0.3s ease;
           line-height: 1.6;
+          opacity: 0;
+          transform: translateY(6px);
+          animation: fadeIn 0.4s ease forwards;
         }
 
-        .msg strong {
-          color: #fff;
-        }
+        .msg strong { color: #fff; }
 
         .typing {
           display: flex;
@@ -290,20 +294,23 @@ export default function ChatPage() {
         .inputRow {
           display: flex;
           padding: 10px;
-          border-top: 1px solid rgba(255,255,255,0.1);
-          background: #0f172a;
+          background: #1e2638;
           gap: 8px;
+          border-top: 1px solid rgba(255,255,255,0.1);
+          position: sticky;
+          bottom: 0;
         }
 
         .inputRow input {
           flex: 1;
-          padding: 10px;
+          padding: 12px;
           border: 2px solid;
           border-radius: 10px;
           background: #0f172a;
           color: #fff;
           font-size: 16px;
           caret-color: #3b82f6;
+          box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
         }
 
         .inputRow button {
@@ -313,17 +320,17 @@ export default function ChatPage() {
           padding: 10px 18px;
           font-weight: 600;
           cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        }
+
+        @keyframes fadeIn {
+          to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 768px) {
           .chat { width: 95%; max-height: calc(100vh - 180px); }
-          .inputRow input { font-size: 14px; }
+          .inputRow input { font-size: 15px; }
           .inputRow button { padding: 8px 14px; }
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
