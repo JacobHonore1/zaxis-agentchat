@@ -12,58 +12,46 @@ const agentStyles: Record<
   Agent,
   { color: string; bubble: string; light: string; text: string }
 > = {
-  SoMe: {
-    color: "#233a63",
-    bubble: "#1a2740",
-    light: "#3f6fd2",
-    text: "#ffffff",
-  },
-  Strategi: {
-    color: "#1e3a32",
-    bubble: "#142621",
-    light: "#29a36a",
-    text: "#f5fff9",
-  },
-  "Firma Guidelines": {
-    color: "#352a52",
-    bubble: "#271f3c",
-    light: "#8256d2",
-    text: "#ffffff",
-  },
+  SoMe: { color: "#1e3a8a", bubble: "#172554", light: "#3b82f6", text: "#ffffff" },
+  Strategi: { color: "#065f46", bubble: "#064e3b", light: "#10b981", text: "#f5fff9" },
+  "Firma Guidelines": { color: "#5b21b6", bubble: "#3b0764", light: "#8b5cf6", text: "#ffffff" },
 };
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [agent, setAgent] = useState<Agent>("SoMe");
   const [open, setOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   // Luk dropdown ved klik udenfor
   useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!dropdownRef.current) return;
-      if (!dropdownRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    const handler = (e: MouseEvent) => {
+      if (!dropdownRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || loading) return;
-
+    if (!input.trim()) return;
     const text = input.trim();
-    setMessages((p) => [...p, { role: "user", content: `[${agent}] ${text}` }]);
+
+    setMessages((p) => [...p, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
-    setError(null);
 
     try {
       const res = await fetch("/api/chat", {
@@ -72,10 +60,26 @@ export default function ChatPage() {
         body: JSON.stringify({ message: `${agent}: ${text}` }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Fejl i serveren");
-      setMessages((p) => [...p, { role: "assistant", content: data.reply || "..." }]);
-    } catch (err: any) {
-      setError(err.message);
+
+      // Her formaterer vi AI’ens svar for bedre læsbarhed
+      const formatted =
+        (data.reply || "")
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Fed tekst
+          .replace(/\n\s*\n/g, "<br/><br/>") // Afsnit
+          .replace(/\n/g, "<br/>"); // Linjeskift
+
+      setMessages((p) => [
+        ...p,
+        { role: "assistant", content: formatted || "..." },
+      ]);
+
+      // Fokuser automatisk på inputfeltet efter send
+      inputRef.current?.focus();
+    } catch {
+      setMessages((p) => [
+        ...p,
+        { role: "assistant", content: "Der opstod en fejl." },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -84,21 +88,25 @@ export default function ChatPage() {
   const { color, bubble, light, text } = agentStyles[agent];
 
   return (
-    <div className="shell">
-      <div className="top">
-        <Image src="/logo.png" alt="Logo" width={160} height={50} priority className="logo" />
-      </div>
+    <div className="page">
+      <header>
+        <Image src="/logo.png" alt="Logo" width={150} height={50} priority />
+      </header>
 
       <div className="selectWrap" ref={dropdownRef}>
         <span className="label">Vælg agent:</span>
         <button
-          type="button"
           className="selectBtn"
           style={{ background: color, borderColor: light, color: text }}
           onClick={() => setOpen((v) => !v)}
         >
           {agent}
-          <svg className={`chev ${open ? "up" : ""}`} width="16" height="16" viewBox="0 0 24 24">
+          <svg
+            className={`chev ${open ? "up" : ""}`}
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+          >
             <path fill={text} d="M7 10l5 5 5-5z" />
           </svg>
         </button>
@@ -125,17 +133,16 @@ export default function ChatPage() {
       </div>
 
       <div className="chat" style={{ borderColor: light }}>
-        <div className="scroll">
+        <div className="scroll" ref={scrollRef}>
           {messages.map((m, i) => (
             <div
               key={i}
-              className={`msg ${m.role === "user" ? "me" : "ai"}`}
+              className={`msg ${m.role}`}
               style={{
                 background: m.role === "user" ? bubble : "rgba(255,255,255,0.08)",
               }}
-            >
-              <strong>{m.role === "user" ? "Du" : "AI"}:</strong> {m.content}
-            </div>
+              dangerouslySetInnerHTML={{ __html: m.content }}
+            />
           ))}
           {loading && (
             <div className="typing" style={{ color: light }}>
@@ -145,163 +152,170 @@ export default function ChatPage() {
               <span className="dot" style={{ animationDelay: "0.3s" }} />
             </div>
           )}
-          <div ref={endRef} />
         </div>
-
-        {error && <div className="error">Fejl: {error}</div>}
 
         <form onSubmit={onSend} className="inputRow">
           <input
+            ref={inputRef}
             type="text"
             placeholder="Skriv din besked..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={loading}
-            className="input"
             style={{ borderColor: light }}
           />
-          <button type="submit" disabled={loading || !input.trim()} className="btn" style={{ background: color }}>
+          <button type="submit" style={{ background: color }}>
             Send
           </button>
         </form>
       </div>
 
       <style>{`
-        :root {
-          --bg: #0b1020;
-          --panel: #141b2d;
-          --text: #ffffff;
-        }
-
         html, body {
           margin: 0;
-          padding: 0;
           height: 100%;
           overflow: hidden;
-          background: var(--bg);
-        }
-
-        .shell {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: flex-start;
-          height: 100vh;
-          overflow: hidden;
-          background: var(--bg);
-          color: var(--text);
+          background: #0b1020;
+          color: #fff;
           font-family: Inter, sans-serif;
         }
 
-        .top { text-align: center; margin-top: 24px; }
-        .logo { width: 160px; height: auto; }
+        .page {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          height: 100vh;
+        }
 
-        /* Dropdown */
-        .selectWrap { position: relative; margin: 12px 0; display: flex; align-items: center; gap: 10px; }
-        .label { color: #e5e7eb; font-size: 14px; }
+        header {
+          margin-top: 20px;
+          text-align: center;
+        }
+
+        .selectWrap {
+          position: relative;
+          margin: 12px 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
         .selectBtn {
           border: 2px solid;
           border-radius: 14px;
-          padding: 10px 14px;
+          padding: 8px 14px;
           display: flex;
           align-items: center;
-          gap: 8px;
-          min-width: 180px;
+          gap: 6px;
           justify-content: space-between;
+          min-width: 160px;
           transition: all 0.25s ease;
         }
-        .selectBtn:hover { filter: brightness(1.1); }
-        .chev { transition: transform 0.2s ease; }
-        .chev.up { transform: rotate(180deg); }
 
         .menu {
           position: absolute;
-          top: calc(100% + 8px);
-          left: 78px;
-          width: 220px;
-          background: rgba(10, 14, 28, 0.85);
+          top: calc(100% + 6px);
+          left: 70px;
+          width: 200px;
           border: 2px solid;
           border-radius: 14px;
           overflow: hidden;
           opacity: 0;
-          transform: translateY(6px) scale(0.98);
+          transform: translateY(6px) scale(0.97);
           pointer-events: none;
-          transition: all 0.2s ease;
+          transition: all 0.25s ease;
         }
+
         .menu.open {
           opacity: 1;
           transform: translateY(0) scale(1);
           pointer-events: auto;
         }
-        .item {
-          padding: 10px 14px;
-          border-bottom: 1px solid;
-          cursor: pointer;
-          transition: filter 0.15s ease;
-        }
-        .item:last-child { border-bottom: none; }
-        .item:hover { filter: brightness(1.1); }
 
-        /* Chat container */
         .chat {
-          width: 100%;
-          max-width: 700px;
-          background: var(--panel);
-          border: 2px solid;
-          border-radius: 16px;
-          box-shadow: 0 0 25px rgba(0,0,0,0.5);
           display: flex;
           flex-direction: column;
+          width: 90%;
+          max-width: 700px;
           flex: 1;
+          border: 2px solid;
+          border-radius: 16px;
+          background: #141b2d;
+          box-shadow: 0 0 25px rgba(0,0,0,0.4);
           overflow: hidden;
-          transition: border-color 0.4s ease;
         }
 
-        /* Scrollable message area */
         .scroll {
           flex: 1;
           overflow-y: auto;
           padding: 16px;
           scrollbar-width: thin;
-          scrollbar-color: rgba(255,255,255,0.15) transparent;
+          scrollbar-color: rgba(255,255,255,0.2) transparent;
         }
+
         .scroll::-webkit-scrollbar { width: 6px; }
         .scroll::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.25);
           border-radius: 4px;
         }
 
-        .msg { padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; word-break: break-word; animation: fadeIn 0.3s ease; }
-        .msg.me { align-self: flex-end; }
-        .msg.ai { background: rgba(255,255,255,0.08); }
-
-        .typing { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-        .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.4); display: inline-block; animation: dance 1s infinite ease-in-out; }
-        @keyframes dance { 0%,60%,100%{transform:translateY(0);opacity:.5} 30%{transform:translateY(-6px);opacity:1} }
-
-        /* Input row */
-        .inputRow { display: flex; gap: 8px; padding: 10px; border-top: 1px solid rgba(255,255,255,0.1); background: #0f172a; }
-        .input {
-          flex: 1;
-          padding: 12px;
+        .msg {
+          padding: 10px 14px;
           border-radius: 10px;
-          border: 2px solid;
-          background: #0f172a;
-          color: var(--text);
-          font-size: 16px;
+          margin-bottom: 10px;
+          animation: fadeIn 0.3s ease;
+          line-height: 1.5;
         }
-        .input:focus { outline: none; }
-        .btn {
+
+        .msg strong {
           color: #fff;
-          border: none;
+        }
+
+        .typing {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          margin-top: 4px;
+        }
+
+        .dot {
+          width: 7px; height: 7px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.4);
+          animation: dance 1s infinite ease-in-out;
+        }
+
+        @keyframes dance {
+          0%,60%,100% { transform: translateY(0); opacity: 0.5; }
+          30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        .inputRow {
+          display: flex;
+          padding: 10px;
+          border-top: 1px solid rgba(255,255,255,0.1);
+          background: #0f172a;
+          gap: 8px;
+        }
+
+        .inputRow input {
+          flex: 1;
+          padding: 10px;
+          border: 2px solid;
           border-radius: 10px;
-          padding: 12px 18px;
+          background: #0f172a;
+          color: #fff;
+          font-size: 16px;
+          caret-color: #3b82f6; /* Blå tydelig cursor */
+        }
+
+        .inputRow button {
+          border: none;
+          color: #fff;
+          border-radius: 10px;
+          padding: 10px 18px;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.2s ease;
         }
-        .btn:hover { filter: brightness(1.1); }
-        .btn:active { transform: scale(0.96); }
 
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(5px); }
