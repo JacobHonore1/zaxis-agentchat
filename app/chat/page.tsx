@@ -12,9 +12,9 @@ const agentStyles: Record<
   Agent,
   { color: string; bubble: string; light: string; text: string }
 > = {
-  SoMe: { color: "#1e3a8a", bubble: "#172554", light: "#3b82f6", text: "#ffffff" },
-  Strategi: { color: "#065f46", bubble: "#064e3b", light: "#10b981", text: "#f5fff9" },
-  "Firma Guidelines": { color: "#5b21b6", bubble: "#3b0764", light: "#8b5cf6", text: "#ffffff" },
+  SoMe: { color: "#1d4ed8", bubble: "#172554", light: "#3b82f6", text: "#ffffff" },
+  Strategi: { color: "#0f766e", bubble: "#064e3b", light: "#14b8a6", text: "#f5fff9" },
+  "Firma Guidelines": { color: "#6d28d9", bubble: "#3b0764", light: "#a78bfa", text: "#ffffff" },
 };
 
 export default function ChatPage() {
@@ -35,7 +35,6 @@ export default function ChatPage() {
     });
   }, [messages]);
 
-  // Luk dropdown ved klik udenfor
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!dropdownRef.current?.contains(e.target as Node)) setOpen(false);
@@ -61,19 +60,17 @@ export default function ChatPage() {
       });
       const data = await res.json();
 
-      // Her formaterer vi AI’ens svar for bedre læsbarhed
       const formatted =
         (data.reply || "")
-          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Fed tekst
-          .replace(/\n\s*\n/g, "<br/><br/>") // Afsnit
-          .replace(/\n/g, "<br/>"); // Linjeskift
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\n\s*\n/g, "<br/><br/>")
+          .replace(/\n/g, "<br/>");
 
       setMessages((p) => [
         ...p,
         { role: "assistant", content: formatted || "..." },
       ]);
 
-      // Fokuser automatisk på inputfeltet efter send
       inputRef.current?.focus();
     } catch {
       setMessages((p) => [
@@ -236,12 +233,13 @@ export default function ChatPage() {
           flex-direction: column;
           width: 90%;
           max-width: 700px;
-          flex: 1;
+          max-height: calc(100vh - 160px); /* aldrig ud af vinduet */
           border: 2px solid;
           border-radius: 16px;
           background: #141b2d;
           box-shadow: 0 0 25px rgba(0,0,0,0.4);
           overflow: hidden;
+          margin-bottom: 24px; /* luft under chatfeltet */
         }
 
         .scroll {
@@ -263,7 +261,7 @@ export default function ChatPage() {
           border-radius: 10px;
           margin-bottom: 10px;
           animation: fadeIn 0.3s ease;
-          line-height: 1.5;
+          line-height: 1.6;
         }
 
         .msg strong {
@@ -305,7 +303,7 @@ export default function ChatPage() {
           background: #0f172a;
           color: #fff;
           font-size: 16px;
-          caret-color: #3b82f6; /* Blå tydelig cursor */
+          caret-color: #3b82f6;
         }
 
         .inputRow button {
@@ -315,6 +313,12 @@ export default function ChatPage() {
           padding: 10px 18px;
           font-weight: 600;
           cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+          .chat { width: 95%; max-height: calc(100vh - 180px); }
+          .inputRow input { font-size: 14px; }
+          .inputRow button { padding: 8px 14px; }
         }
 
         @keyframes fadeIn {
