@@ -1,175 +1,100 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-
-type Msg = { role: "user" | "assistant"; content: string };
+import { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [input, setInput] = useState('');
 
-  const endRef = useRef<HTMLDivElement | null>(null);
+  // Sørg for, at hver bruger får et conversation_id som gemmes i browseren
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Unik samtale-ID (kan gøres dynamisk senere)
-  const conversationId = "default-session";
-
-  async function saveMessageToSupabase(sender: string, content: string, role: string) {
-    try {
-      await fetch("/api/save-message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          sender,
-          content,
-          role,
-        }),
-      });
-    } catch (err) {
-      console.error("Fejl ved gemning i Supabase:", err);
+    let conversationId = localStorage.getItem('conversation_id');
+    if (!conversationId) {
+      conversationId = uuidv4();
+      localStorage.setItem('conversation_id', conversationId);
     }
-  }
+  }, []);
 
-  async function onSend(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
+  // Funktion til at sende beskeder til API'en
+  const sendMessage = async () => {
+    if (!input.trim()) return;
 
-    const text = input.trim();
-    if (!text || loading) return;
+    const conversationId = localStorage.getItem('conversation_id');
+    const userMessage = { role: 'user', content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
 
-    // Tilføj brugerens besked lokalt
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
-    setInput("");
-    setLoading(true);
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        message: input,
+      }),
+    });
 
-    // Gem brugerens besked i Supabase
-    await saveMessageToSupabase("user", text, "user");
+    const data = await response.json();
+    const botMessage = { role: 'assistant', content: data.reply };
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || data?.error) {
-        throw new Error(data?.error || `Server error (${res.status})`);
-      }
-
-      const reply =
-        data?.reply ??
-        data?.output_text ??
-        data?.general_summary ??
-        data?.internal_answer ??
-        data?.external_answer ??
-        "AI returned no content.";
-
-      // Tilføj AI’ens svar lokalt
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: reply.toString() },
-      ]);
-
-      // Gem AI’ens svar i Supabase
-      await saveMessageToSupabase("ai", reply.toString(), "assistant");
-    } catch (err: any) {
-      setError(err?.message || "Ukendt fejl fra serveren.");
-    } finally {
-      setLoading(false);
-    }
-  }
+    setMessages((prev) => [...prev, botMessage]);
+  };
 
   return (
-    <div style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px" }}>
-      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 20 }}>
-        Zaxis Agent Chat
-      </h1>
+    <div style={{ maxWidth: 600, margin: '40px auto', fontFamily: 'sans-serif' }}>
+      <h1 style={{ textAlign: 'center' }}>Zaxis AgentChat</h1>
 
-      {/* Chat-vindue */}
       <div
         style={{
-          border: "2px solid #e5e7eb",
+          border: '1px solid #ddd',
           borderRadius: 8,
-          height: 420,
-          overflowY: "auto",
           padding: 16,
-          background: "#fff",
+          height: 400,
+          overflowY: 'auto',
+          background: '#fafafa',
         }}
       >
-        {messages.length === 0 && (
-          <div style={{ color: "#6b7280" }}>
-            Skriv en besked herunder for at starte.
-          </div>
-        )}
-
-        {messages.map((m, i) => (
+        {messages.map((msg, i) => (
           <div
-            key={`${m.role}-${i}`}
+            key={i}
             style={{
-              marginBottom: 12,
-              background: m.role === "user" ? "#eaf3ff" : "#f9fafb",
-              border: "1px solid #e5e7eb",
-              borderRadius: 6,
-              padding: "8px 10px",
+              textAlign: msg.role === 'user' ? 'right' : 'left',
+              marginBottom: 8,
             }}
           >
-            <strong>{m.role === "user" ? "Du" : "AI"}:</strong>{" "}
-            <span style={{ whiteSpace: "pre-wrap" }}>{m.content}</span>
+            <strong>{msg.role === 'user' ? 'Du:' : 'AI:'}</strong> {msg.content}
           </div>
         ))}
-
-        {loading && <div style={{ color: "#6b7280" }}>AI skriver…</div>}
-
-        <div ref={endRef} />
       </div>
 
-      {/* Fejl */}
-      {error && (
-        <div style={{ color: "#dc2626", marginTop: 10 }}>
-          Fejl: {error}
-        </div>
-      )}
-
-      {/* Input */}
-      <form
-        onSubmit={onSend}
-        style={{ display: "flex", gap: 10, marginTop: 12 }}
-      >
+      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
         <input
           type="text"
-          placeholder="Skriv besked…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Skriv en besked..."
           style={{
             flex: 1,
-            padding: "10px 12px",
-            border: "1px solid #d1d5db",
-            borderRadius: 6,
-            outline: "none",
+            padding: 8,
+            borderRadius: 4,
+            border: '1px solid #ccc',
           }}
         />
         <button
-          type="submit"
-          disabled={loading || input.trim().length === 0}
+          onClick={sendMessage}
           style={{
-            background: "#111827",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            padding: "10px 14px",
-            cursor: loading ? "not-allowed" : "pointer",
+            background: '#0070f3',
+            color: 'white',
+            border: 'none',
+            borderRadius: 4,
+            padding: '8px 16px',
+            cursor: 'pointer',
           }}
         >
-          {loading ? "Sender…" : "Send"}
+          Send
         </button>
-      </form>
+      </div>
     </div>
   );
 }
