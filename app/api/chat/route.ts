@@ -10,11 +10,9 @@ const openai = new OpenAI({
 export async function POST(req: Request) {
   try {
     const { message, conversation_id } = await req.json();
+    const convId = conversation_id || uuidv4();
 
-    // Opret samtale hvis ingen eksisterer
-    let convId = conversation_id || uuidv4();
-
-    // Gem brugerens besked i Supabase
+    // Gem brugerens besked
     await supabaseServer.from("messages").insert([
       {
         id: uuidv4(),
@@ -36,7 +34,7 @@ export async function POST(req: Request) {
 
     const aiMessage = completion.choices[0].message.content;
 
-    // Gem AI’ens svar
+    // Gem AI-svar
     await supabaseServer.from("messages").insert([
       {
         id: uuidv4(),
@@ -48,8 +46,8 @@ export async function POST(req: Request) {
     ]);
 
     return NextResponse.json({ reply: aiMessage, conversation_id: convId });
-  } catch (error) {
-    console.error("Fejl i /api/chat:", error);
-    return NextResponse.json({ error: "Noget gik galt." }, { status: 500 });
+  } catch (err) {
+    console.error("Fejl i /api/chat:", err);
+    return NextResponse.json({ error: "Serverfejl" }, { status: 500 });
   }
 }
