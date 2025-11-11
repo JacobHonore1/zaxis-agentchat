@@ -15,6 +15,26 @@ export default function ChatPage() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Unik samtale-ID (kan gøres dynamisk senere)
+  const conversationId = "default-session";
+
+  async function saveMessageToSupabase(sender: string, content: string, role: string) {
+    try {
+      await fetch("/api/save-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          sender,
+          content,
+          role,
+        }),
+      });
+    } catch (err) {
+      console.error("Fejl ved gemning i Supabase:", err);
+    }
+  }
+
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -26,6 +46,9 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
+
+    // Gem brugerens besked i Supabase
+    await saveMessageToSupabase("user", text, "user");
 
     try {
       const res = await fetch("/api/chat", {
@@ -39,7 +62,6 @@ export default function ChatPage() {
         throw new Error(data?.error || `Server error (${res.status})`);
       }
 
-      // Understøt flere mulige feltnavne fra backend
       const reply =
         data?.reply ??
         data?.output_text ??
@@ -48,10 +70,14 @@ export default function ChatPage() {
         data?.external_answer ??
         "AI returned no content.";
 
+      // Tilføj AI’ens svar lokalt
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: reply.toString() },
       ]);
+
+      // Gem AI’ens svar i Supabase
+      await saveMessageToSupabase("ai", reply.toString(), "assistant");
     } catch (err: any) {
       setError(err?.message || "Ukendt fejl fra serveren.");
     } finally {
