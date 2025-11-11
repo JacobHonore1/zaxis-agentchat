@@ -1,40 +1,65 @@
-import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-import { supabaseServer } from '@/lib/supabaseClient';
+import { NextResponse } from "next/server";
+import OpenAI from "openai";
+import { supabaseServer } from "@/lib/supabaseClient";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(req: Request) {
-  const { conversation_id, message } = await req.json();
+  try {
+    const { conversation_id, message } = await req.json();
 
-  // Hent tidligere beskeder fra Supabase
-  let { data: messages } = await supabaseServer
-    .from('messages')
-    .select('role, content')
-    .eq('conversation_id', conversation_id)
-    .order('created_at', { ascending: true });
+    if (!conversation_id || !message) {
+      return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    }
 
-  const history = messages?.map((m) => ({
-    role: m.role,
-    content: m.content,
-  })) || [];
+    // Gem brugerens besked i Supabase
+    await supabaseServer.from("messages").insert([
+      {
+        conversation_id,
+        sender: "user",
+        content: message,
+        role: "user",
+      },
+    ]);
 
-  // Tilføj brugerens besked
-  history.push({ role: 'user', content: message });
+    // Hent tidligere beskeder for kontekst
+    const { data: pastMessages } = await supabaseServer
+      .from("messages")
+      .select("role, content")
+      .eq("conversation_id", conversation_id)
+      .order("created_at", { ascending: true });
 
-  // Send hele historikken til OpenAI
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: history,
-  });
+    const messages = pastMessages || [];
 
-  const reply = completion.choices[0].message.content;
+    // Tilføj den nye besked til konteksten
+    const conversation = [
+      { role: "system", content: "Du er en hjælpsom AI-assistent." },
+      ...messages,
+    ];
 
-  // Gem både brugerens besked og AI-svar i Supabase
-  await supabaseServer.from('messages').insert([
-    { conversation_id, role: 'user', content: message },
-    { conversation_id, role: 'assistant', content: reply },
-  ]);
+    // Få svar fra OpenAI
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: conversation,
+    });
 
-  return NextResponse.json({ reply });
+    const reply = completion.choices[0].message?.content || "";
+
+    // Gem AI-svaret i Supabase
+    await supabaseServer.from("messages").insert([
+      {
+        conversation_id,
+        sender: "assistant",
+        content: reply,
+        role: "assistant",
+      },
+    ]);
+
+    return NextResponse.json({ reply });
+  } catch (err) {
+    console.error("Chat API error:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
