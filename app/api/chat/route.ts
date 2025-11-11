@@ -14,32 +14,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing data" }, { status: 400 });
     }
 
-    // Gem brugerens besked i Supabase
-    await supabaseServer.from("messages").insert([
-      {
+    // Gem brugerens besked
+    const { error: insertError1 } = await supabaseServer
+      .from("messages")
+      .insert({
         conversation_id,
         sender: "user",
         content: message,
         role: "user",
-      },
-    ]);
+      });
 
-    // Hent tidligere beskeder for kontekst
-    const { data: pastMessages } = await supabaseServer
+    if (insertError1) console.error("User message insert error:", insertError1);
+
+    // Hent tidligere beskeder som kontekst
+    const { data: history, error: fetchError } = await supabaseServer
       .from("messages")
       .select("role, content")
       .eq("conversation_id", conversation_id)
       .order("created_at", { ascending: true });
 
-    const messages = pastMessages || [];
+    if (fetchError) console.error("Fetch messages error:", fetchError);
 
-    // Tilføj den nye besked til konteksten
+    const messages = history || [];
+
+    // Tilføj systemprompt og brugerens input
     const conversation = [
       { role: "system", content: "Du er en hjælpsom AI-assistent." },
       ...messages,
     ];
 
-    // Få svar fra OpenAI
+    // Kald OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: conversation,
@@ -47,15 +51,17 @@ export async function POST(req: Request) {
 
     const reply = completion.choices[0].message?.content || "";
 
-    // Gem AI-svaret i Supabase
-    await supabaseServer.from("messages").insert([
-      {
+    // Gem AI'ens svar
+    const { error: insertError2 } = await supabaseServer
+      .from("messages")
+      .insert({
         conversation_id,
         sender: "assistant",
         content: reply,
         role: "assistant",
-      },
-    ]);
+      });
+
+    if (insertError2) console.error("Assistant message insert error:", insertError2);
 
     return NextResponse.json({ reply });
   } catch (err) {
