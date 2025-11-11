@@ -1,0 +1,4 @@
+# Fjern gamle builds og fejlende API-ruter
+app/api/save-message/
+.vercel/
+node_modules/
