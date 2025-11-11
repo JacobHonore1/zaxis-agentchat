@@ -1,24 +1,29 @@
 {
   "name": "zaxis-agentchat",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "postinstall": "next telemetry disable"
+    "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
     "next": "15.0.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "openai": "^4.56.0",
-    "lucide-react": "^0.344.0"
+    "openai": "^4.59.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
-    "@types/react": "^18.3.5",
-    "@types/node": "^20.12.7"
+    "@types/node": "20.11.30",
+    "@types/react": "18.2.46",
+    "@types/react-dom": "18.2.18",
+    "typescript": "5.3.3",
+    "eslint": "8.57.0",
+    "eslint-config-next": "15.0.3"
   },
-  "engines": { "node": ">=18.18" }
+  "engines": {
+    "node": ">=18.18"
+  }
 }
