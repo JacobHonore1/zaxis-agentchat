@@ -1,43 +1,40 @@
-import { NextResponse } from "next/server";
-import OpenAI from "openai";
+import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
+import { supabaseServer } from '@/lib/supabaseClient';
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: Request) {
-  try {
-    const { message } = await req.json();
+  const { conversation_id, message } = await req.json();
 
-    if (!message || typeof message !== "string") {
-      return NextResponse.json(
-        { error: 'Missing "message" (string) in request body' },
-        { status: 400 }
-      );
-    }
+  // Hent tidligere beskeder fra Supabase
+  let { data: messages } = await supabaseServer
+    .from('messages')
+    .select('role, content')
+    .eq('conversation_id', conversation_id)
+    .order('created_at', { ascending: true });
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+  const history = messages?.map((m) => ({
+    role: m.role,
+    content: m.content,
+  })) || [];
 
-    // Simpelt kald – du kan bygge videre her senere med flere agenter
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // stabil og hurtig
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are Zaxis AI Agent. You provide clear, helpful, and professional answers in concise text.",
-        },
-        { role: "user", content: message },
-      ],
-    });
+  // Tilføj brugerens besked
+  history.push({ role: 'user', content: message });
 
-    // Udpak svaret fra OpenAI
-    const reply = completion.choices[0]?.message?.content || "No response generated.";
+  // Send hele historikken til OpenAI
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: history,
+  });
 
-    return NextResponse.json({ reply });
-  } catch (error: any) {
-    console.error("Error in /api/chat:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
-  }
+  const reply = completion.choices[0].message.content;
+
+  // Gem både brugerens besked og AI-svar i Supabase
+  await supabaseServer.from('messages').insert([
+    { conversation_id, role: 'user', content: message },
+    { conversation_id, role: 'assistant', content: reply },
+  ]);
+
+  return NextResponse.json({ reply });
 }
