@@ -9,7 +9,6 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Opret eller hent conversation_id
   useEffect(() => {
     let conversationId = localStorage.getItem('conversation_id');
     if (!conversationId) {
@@ -17,10 +16,10 @@ export default function ChatPage() {
       localStorage.setItem('conversation_id', conversationId);
     }
 
-    // Fjerner kant og scrollbar fra body
+    // Global styling
     document.body.style.margin = '0';
     document.body.style.padding = '0';
-    document.body.style.backgroundColor = '#002233';
+    document.body.style.background = 'linear-gradient(to bottom, #004466, #001a26)';
     document.body.style.overflow = 'hidden';
   }, []);
 
@@ -57,37 +56,43 @@ export default function ChatPage() {
       style={{
         width: '100vw',
         height: '100vh',
-        background: 'linear-gradient(to bottom, #00334d, #001a26)',
         color: 'white',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        fontFamily: 'sans-serif',
+        alignItems: 'center',
+        fontFamily: 'Inter, sans-serif',
       }}
     >
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(to bottom, #004466, #002233)',
+          width: '100%',
+          background: 'linear-gradient(to bottom, #006080, #002233)',
           color: 'white',
-          padding: '20px 40px',
+          padding: '18px 40px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexShrink: 0,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
         }}
       >
-        <h1 style={{ margin: 0 }}>Virtoo_internal_agent_demo</h1>
+        <h1 style={{ margin: 0, fontWeight: 600 }}>Virtoo_internal_agent_demo</h1>
         <img src="/VITROO logo_Black.png" alt="Virtoo Logo" style={{ height: 60 }} />
       </div>
 
-      {/* Chatfelt */}
+      {/* Chat Container */}
       <div
         style={{
           flex: 1,
+          width: '90%',
+          maxWidth: 900,
+          margin: '30px 0',
+          background: 'linear-gradient(to top, #002a3d, #003b59)',
+          borderRadius: 16,
+          padding: 30,
           overflowY: 'auto',
-          padding: '20px 40px',
-          background: 'linear-gradient(to top, #002a3d, #00334d)',
+          boxShadow: '0 0 20px rgba(0,0,0,0.4)',
           scrollbarWidth: 'thin',
           scrollbarColor: '#002233 #001a26',
         }}
@@ -103,28 +108,43 @@ export default function ChatPage() {
             background-color: #002233;
             border-radius: 3px;
           }
+
+          @keyframes blink {
+            0%,
+            80%,
+            100% {
+              opacity: 0;
+            }
+            40% {
+              opacity: 1;
+            }
+          }
+
+          .dots::after {
+            content: '…';
+            animation: blink 1s infinite;
+          }
         `}</style>
 
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              textAlign: msg.role === 'user' ? 'right' : 'left',
-              marginBottom: 16,
-            }}
-          >
-            <strong>{msg.role === 'user' ? 'Du:' : 'AI:'}</strong>
+          <div key={i} style={{ marginBottom: 20, textAlign: 'left' }}>
+            <strong
+              style={{
+                color: msg.role === 'user' ? '#5bc0de' : '#9fe2bf',
+                display: 'block',
+                marginBottom: 4,
+              }}
+            >
+              {msg.role === 'user' ? 'Bruger' : 'Assistent'}
+            </strong>
             <div
               style={{
                 backgroundColor: msg.role === 'user' ? '#004466' : '#002a3d',
-                display: 'inline-block',
                 borderRadius: 12,
-                padding: '12px 16px',
-                marginTop: 4,
-                maxWidth: '80%',
-                wordWrap: 'break-word',
-                textAlign: 'left',
+                padding: '14px 18px',
                 lineHeight: 1.6,
+                fontSize: '15px',
+                maxWidth: '90%',
               }}
             >
               <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -133,20 +153,28 @@ export default function ChatPage() {
         ))}
 
         {loading && (
-          <div style={{ color: '#ccc', marginTop: 8 }}>
-            AI skriver<span className="dots">...</span>
+          <div
+            style={{
+              color: '#9fe2bf',
+              fontStyle: 'italic',
+              marginTop: 10,
+              marginLeft: 4,
+            }}
+          >
+            Assistent skriver<span className="dots"></span>
           </div>
         )}
       </div>
 
-      {/* Inputfelt */}
+      {/* Input */}
       <div
         style={{
           display: 'flex',
           gap: 8,
-          padding: '16px 24px',
-          backgroundColor: '#001a26',
-          flexShrink: 0,
+          padding: '16px 24px 30px 24px',
+          backgroundColor: 'transparent',
+          width: '90%',
+          maxWidth: 900,
         }}
       >
         <input
@@ -158,12 +186,13 @@ export default function ChatPage() {
           autoFocus
           style={{
             flex: 1,
-            padding: 12,
+            padding: 14,
             borderRadius: 8,
             border: '1px solid #004466',
             backgroundColor: '#00334d',
             color: 'white',
             fontWeight: 'bold',
+            outline: 'none',
           }}
         />
         <button
@@ -173,7 +202,7 @@ export default function ChatPage() {
             color: 'white',
             border: 'none',
             borderRadius: 8,
-            padding: '12px 20px',
+            padding: '14px 24px',
             cursor: 'pointer',
             fontWeight: 'bold',
           }}
@@ -187,7 +216,7 @@ export default function ChatPage() {
             color: 'white',
             border: 'none',
             borderRadius: 8,
-            padding: '12px 20px',
+            padding: '14px 24px',
             cursor: 'pointer',
             fontWeight: 'bold',
           }}
