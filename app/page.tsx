@@ -1,14 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Hent tidligere conversation_id fra localStorage (hvis det findes)
+  // Fokus på inputfeltet ved indlæsning
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [loading]);
+
+  // Scroll til bund når nye beskeder tilføjes
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Hent tidligere conversation_id fra localStorage
   useEffect(() => {
     const storedId = localStorage.getItem('conversation_id');
     if (storedId) {
@@ -17,7 +29,6 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Send besked til API
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -43,7 +54,6 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, botMessage]);
       }
 
-      // Gem nyt conversation_id hvis det er første besked
       if (data.conversation_id && !conversationId) {
         setConversationId(data.conversation_id);
         localStorage.setItem('conversation_id', data.conversation_id);
@@ -57,39 +67,51 @@ export default function ChatPage() {
       ]);
     } finally {
       setLoading(false);
+      inputRef.current?.focus();
     }
   };
 
-  // Nulstil samtale
   const resetConversation = () => {
     localStorage.removeItem('conversation_id');
     setConversationId(null);
     setMessages([]);
+    inputRef.current?.focus();
+  };
+
+  // Enkel formattering af AI-svar med Markdown-lignende visning
+  const renderFormattedContent = (text: string) => {
+    const lines = text.split('\n').filter((l) => l.trim() !== '');
+    return lines.map((line, i) => {
+      if (line.startsWith('###')) return <h3 key={i}>{line.replace('###', '').trim()}</h3>;
+      if (line.startsWith('**')) return <strong key={i}>{line.replace(/\*\*/g, '')}</strong>;
+      if (line.startsWith('- ')) return <li key={i}>{line.replace('- ', '').trim()}</li>;
+      return <p key={i}>{line}</p>;
+    });
   };
 
   return (
     <div
       style={{
+        minHeight: '100vh',
+        margin: 0,
+        padding: 0,
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh',
         background: 'linear-gradient(135deg, #7b61ff, #5ee7df)',
         fontFamily: 'Inter, sans-serif',
-        color: '#1a1a1a',
-        padding: '20px',
       }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: 700,
-          background: 'white',
-          borderRadius: 20,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+          maxWidth: 720,
+          height: '90vh',
           display: 'flex',
           flexDirection: 'column',
+          borderRadius: 20,
+          backgroundColor: 'white',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
           overflow: 'hidden',
         }}
       >
@@ -97,11 +119,11 @@ export default function ChatPage() {
         <div
           style={{
             background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
-            padding: '20px 24px',
+            padding: '16px',
             textAlign: 'center',
             color: 'white',
             fontWeight: 600,
-            fontSize: '1.3rem',
+            fontSize: '1.2rem',
             letterSpacing: '0.5px',
           }}
         >
@@ -112,10 +134,9 @@ export default function ChatPage() {
         <div
           style={{
             flex: 1,
-            padding: '24px',
-            height: 450,
+            padding: '20px',
             overflowY: 'auto',
-            backgroundColor: '#f9f9fb',
+            background: '#f9f9fb',
           }}
         >
           {messages.length === 0 ? (
@@ -134,7 +155,7 @@ export default function ChatPage() {
                 <div
                   style={{
                     display: 'inline-block',
-                    padding: '10px 14px',
+                    padding: '12px 16px',
                     borderRadius: 16,
                     background:
                       msg.role === 'user'
@@ -143,13 +164,63 @@ export default function ChatPage() {
                     color: msg.role === 'user' ? 'white' : '#333',
                     maxWidth: '80%',
                     wordBreak: 'break-word',
+                    textAlign: 'left',
                   }}
                 >
-                  {msg.content}
+                  {msg.role === 'assistant'
+                    ? renderFormattedContent(msg.content)
+                    : msg.content}
                 </div>
               </div>
             ))
           )}
+
+          {/* Tre dansende prikker ved loading */}
+          {loading && (
+            <div style={{ textAlign: 'left', margin: '10px 0 0 10px' }}>
+              <div className="dot-flashing" />
+              <style>
+                {`
+                .dot-flashing {
+                  position: relative;
+                  width: 12px;
+                  height: 12px;
+                  border-radius: 6px;
+                  background-color: #6C63FF;
+                  color: #6C63FF;
+                  animation: dot-flashing 1s infinite linear alternate;
+                  animation-delay: .5s;
+                }
+                .dot-flashing::before, .dot-flashing::after {
+                  content: '';
+                  display: inline-block;
+                  position: absolute;
+                  top: 0;
+                  width: 12px;
+                  height: 12px;
+                  border-radius: 6px;
+                  background-color: #6C63FF;
+                  color: #6C63FF;
+                }
+                .dot-flashing::before {
+                  left: -20px;
+                  animation: dot-flashing 1s infinite alternate;
+                  animation-delay: 0s;
+                }
+                .dot-flashing::after {
+                  left: 20px;
+                  animation: dot-flashing 1s infinite alternate;
+                  animation-delay: 1s;
+                }
+                @keyframes dot-flashing {
+                  0% { opacity: 0.2; }
+                  50%, 100% { opacity: 1; }
+                }
+              `}
+              </style>
+            </div>
+          )}
+          <div ref={chatEndRef} />
         </div>
 
         {/* Inputfelt + footer */}
@@ -157,13 +228,14 @@ export default function ChatPage() {
           style={{
             borderTop: '1px solid #eee',
             background: '#fff',
-            padding: '12px 16px',
+            padding: '12px 12px',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
           }}
         >
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -188,36 +260,33 @@ export default function ChatPage() {
               color: 'white',
               border: 'none',
               borderRadius: 12,
-              padding: '10px 18px',
+              padding: '10px 16px',
               fontWeight: 600,
               cursor: loading ? 'default' : 'pointer',
               transition: 'opacity 0.2s',
+              flexShrink: 0,
             }}
           >
-            {loading ? 'Sender…' : 'Send'}
+            {loading ? '...' : 'Send'}
           </button>
           <button
             onClick={resetConversation}
             title="Nulstil samtale"
             style={{
-              background: '#f4f4f4',
-              color: '#333',
-              border: '1px solid #ddd',
+              background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+              color: 'white',
+              border: 'none',
               borderRadius: 12,
               padding: '10px 14px',
-              fontWeight: 500,
+              fontWeight: 600,
               cursor: 'pointer',
-              transition: 'background 0.2s',
+              flexShrink: 0,
             }}
           >
             🔄
           </button>
         </div>
       </div>
-
-      <p style={{ color: 'white', marginTop: 20, fontSize: '0.9rem', opacity: 0.8 }}>
-        {conversationId ? `Samtale-ID: ${conversationId}` : 'Ny samtale starter ved næste besked'}
-      </p>
     </div>
   );
 }
