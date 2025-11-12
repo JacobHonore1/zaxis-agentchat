@@ -1,43 +1,62 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState('');
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Sørg for, at hver bruger får et conversation_id som gemmes i browseren
+  // Hent evt. tidligere conversation_id fra localStorage
   useEffect(() => {
-    let conversationId = localStorage.getItem('conversation_id');
-    if (!conversationId) {
-      conversationId = uuidv4();
-      localStorage.setItem('conversation_id', conversationId);
+    const storedId = localStorage.getItem('conversation_id');
+    if (storedId) {
+      setConversationId(storedId);
+      console.log('💬 Fortsætter eksisterende samtale:', storedId);
     }
   }, []);
 
-  // Funktion til at sende beskeder til API'en
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
-    const conversationId = localStorage.getItem('conversation_id');
     const userMessage = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    setLoading(true);
 
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        conversation_id: conversationId,
-        message: input,
-      }),
-    });
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          message: input,
+        }),
+      });
 
-    const data = await response.json();
-    const botMessage = { role: 'assistant', content: data.reply };
+      const data = await res.json();
 
-    setMessages((prev) => [...prev, botMessage]);
+      if (data.reply) {
+        const botMessage = { role: 'assistant', content: data.reply };
+        setMessages((prev) => [...prev, botMessage]);
+      }
+
+      // Gem nyt conversation_id hvis det er første besked
+      if (data.conversation_id && !conversationId) {
+        setConversationId(data.conversation_id);
+        localStorage.setItem('conversation_id', data.conversation_id);
+        console.log('🧠 Nyt conversation_id gemt:', data.conversation_id);
+      }
+    } catch (err) {
+      console.error('🚨 Fejl ved afsendelse:', err);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Der opstod en fejl ved forbindelsen.' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,19 +99,21 @@ export default function ChatPage() {
             borderRadius: 4,
             border: '1px solid #ccc',
           }}
+          disabled={loading}
         />
         <button
           onClick={sendMessage}
+          disabled={loading}
           style={{
-            background: '#0070f3',
+            background: loading ? '#999' : '#0070f3',
             color: 'white',
             border: 'none',
             borderRadius: 4,
             padding: '8px 16px',
-            cursor: 'pointer',
+            cursor: loading ? 'default' : 'pointer',
           }}
         >
-          Send
+          {loading ? 'Sender...' : 'Send'}
         </button>
       </div>
     </div>
