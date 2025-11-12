@@ -16,10 +16,9 @@ export default function ChatPage() {
       localStorage.setItem('conversation_id', conversationId);
     }
 
-    // Global styling
     document.body.style.margin = '0';
     document.body.style.padding = '0';
-    document.body.style.background = 'linear-gradient(to bottom, #004466, #001a26)';
+    document.body.style.background = '#002233';
     document.body.style.overflow = 'hidden';
   }, []);
 
@@ -59,40 +58,37 @@ export default function ChatPage() {
         color: 'white',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
         fontFamily: 'Inter, sans-serif',
+        background: 'linear-gradient(to bottom, #00334d, #001a26)',
       }}
     >
-      {/* Header */}
+      {/* Topbjælke */}
       <div
         style={{
-          width: '100%',
-          background: 'linear-gradient(to bottom, #006080, #002233)',
-          color: 'white',
+          background: 'linear-gradient(to bottom, #004466, #002233)',
           padding: '18px 40px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
           flexShrink: 0,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
         }}
       >
-        <h1 style={{ margin: 0, fontWeight: 600 }}>Virtoo_internal_agent_demo</h1>
-        <img src="/VITROO logo_Black.png" alt="Virtoo Logo" style={{ height: 60 }} />
+        <h1 style={{ margin: 0, fontWeight: 600, fontSize: 20 }}>Virtoo_internal_agent_demo</h1>
+        <img
+          src="/VITROO logo_Black.png"
+          alt="Virtoo Logo"
+          style={{ height: 75, objectFit: 'contain' }}
+        />
       </div>
 
-      {/* Chat Container */}
+      {/* Chatindhold */}
       <div
         style={{
           flex: 1,
-          width: '90%',
-          maxWidth: 900,
-          margin: '30px 0',
-          background: 'linear-gradient(to top, #002a3d, #003b59)',
-          borderRadius: 16,
-          padding: 30,
           overflowY: 'auto',
-          boxShadow: '0 0 20px rgba(0,0,0,0.4)',
+          padding: '24px 60px',
+          background: 'linear-gradient(to top, #002a3d, #003b59)',
           scrollbarWidth: 'thin',
           scrollbarColor: '#002233 #001a26',
         }}
@@ -122,16 +118,23 @@ export default function ChatPage() {
 
           .dots::after {
             content: '…';
-            animation: blink 1s infinite;
+            animation: blink 1.2s infinite;
           }
         `}</style>
 
         {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: 20, textAlign: 'left' }}>
+          <div
+            key={i}
+            style={{
+              marginBottom: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+            }}
+          >
             <strong
               style={{
                 color: msg.role === 'user' ? '#5bc0de' : '#9fe2bf',
-                display: 'block',
                 marginBottom: 4,
               }}
             >
@@ -144,7 +147,8 @@ export default function ChatPage() {
                 padding: '14px 18px',
                 lineHeight: 1.6,
                 fontSize: '15px',
-                maxWidth: '90%',
+                maxWidth: '75%',
+                color: 'white',
               }}
             >
               <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -166,15 +170,15 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* Input */}
+      {/* Inputfelt */}
       <div
         style={{
           display: 'flex',
           gap: 8,
-          padding: '16px 24px 30px 24px',
-          backgroundColor: 'transparent',
-          width: '90%',
-          maxWidth: 900,
+          padding: '18px 60px 30px 60px',
+          backgroundColor: '#002233',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          flexShrink: 0,
         }}
       >
         <input
