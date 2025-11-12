@@ -2,13 +2,11 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 
-// Opret forbindelse til Supabase
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Opret forbindelse til OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
@@ -21,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
-    // Hvis der ikke findes et conversation_id, opret en ny samtale
+    // Tjek / opret samtale
     let conversationId = conversation_id;
     if (!conversationId) {
       const { data, error } = await supabase
@@ -34,7 +32,7 @@ export async function POST(req: Request) {
       conversationId = data.id;
     }
 
-    // Gem brugerens besked i databasen
+    // Gem brugerbesked
     await supabase.from("messages").insert([
       {
         conversation_id: conversationId,
@@ -44,34 +42,33 @@ export async function POST(req: Request) {
       },
     ]);
 
-    // Hent de seneste 10 beskeder for denne samtale
-    const { data: recentMessages, error: fetchError } = await supabase
+    // Hent tidligere beskeder
+    const { data: recentMessages } = await supabase
       .from("messages")
       .select("role, content")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true })
       .limit(10);
 
-    if (fetchError) throw fetchError;
+    const messagesForAI = (recentMessages || []).map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
 
-    // Klargør chat-historikken til OpenAI
-    const messagesForAI = recentMessages?.map((msg) => ({
-      role: msg.role as "user" | "assistant",
-      content: msg.content,
-    })) || [];
-
-    // Tilføj brugerens nye besked til slutningen
     messagesForAI.push({ role: "user", content: message });
 
-    // Send hele samtaleforløbet til OpenAI
+    // OpenAI kald med sikkerhedsnet
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: messagesForAI,
+      temperature: 0.7,
     });
 
-    const reply = completion.choices[0].message.content;
+    const reply =
+      completion?.choices?.[0]?.message?.content ||
+      "Beklager, jeg kunne ikke generere et svar.";
 
-    // Gem AI’ens svar i databasen
+    // Gem AI-svar
     await supabase.from("messages").insert([
       {
         conversation_id: conversationId,
@@ -81,16 +78,11 @@ export async function POST(req: Request) {
       },
     ]);
 
-    // Returnér AI’ens svar + samtale-id til frontend
-    return NextResponse.json({
-      reply,
-      conversation_id: conversationId,
-    });
-
-  } catch (error) {
-    console.error("Error in chat route:", error);
+    return NextResponse.json({ reply, conversation_id: conversationId });
+  } catch (error: any) {
+    console.error("Error in route:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: error.message || "Unexpected error in chat" },
       { status: 500 }
     );
   }
