@@ -91,12 +91,13 @@ export default function ChatPage() {
     <div
       style={{
         minHeight: '100vh',
+        width: '100vw',
         margin: 0,
         padding: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#002233', // 🌙 mørk baggrund
+        background: '#002233',
         fontFamily: 'Inter, sans-serif',
       }}
     >
@@ -116,7 +117,7 @@ export default function ChatPage() {
         {/* Header */}
         <div
           style={{
-            background: '#cde7ff', // 🌤️ pale blue
+            background: '#cde7ff',
             padding: '16px 20px',
             display: 'flex',
             alignItems: 'center',
@@ -135,12 +136,12 @@ export default function ChatPage() {
           </h1>
 
           {/* Logo – placer i højre side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             <Image
-              src="/virtoo-logo.png"
+              src="/logo.png"
               alt="Virtoo logo"
-              width={36}
-              height={36}
+              width={40}
+              height={40}
               style={{ objectFit: 'contain' }}
             />
           </div>
@@ -199,9 +200,9 @@ export default function ChatPage() {
                 {`
                 .dot-flashing {
                   position: relative;
-                  width: 12px;
-                  height: 12px;
-                  border-radius: 6px;
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 50%;
                   background-color: #6C63FF;
                   animation: dot-flashing 1s infinite linear alternate;
                 }
@@ -209,13 +210,13 @@ export default function ChatPage() {
                   content: '';
                   position: absolute;
                   top: 0;
-                  width: 12px;
-                  height: 12px;
-                  border-radius: 6px;
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 50%;
                   background-color: #6C63FF;
                 }
-                .dot-flashing::before { left: -20px; animation: dot-flashing 1s infinite alternate; }
-                .dot-flashing::after { left: 20px; animation: dot-flashing 1s infinite alternate; }
+                .dot-flashing::before { left: -14px; animation: dot-flashing 1s infinite alternate; }
+                .dot-flashing::after { left: 14px; animation: dot-flashing 1s infinite alternate; }
                 @keyframes dot-flashing {
                   0% { opacity: 0.2; }
                   50%, 100% { opacity: 1; }
@@ -244,13 +245,14 @@ export default function ChatPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            placeholder="Skriv en besked..."
+            placeholder="Spørg mig"
             style={{
               flex: 1,
               padding: '10px 14px',
               borderRadius: 12,
               border: '1px solid #ccc',
-              fontSize: '0.95rem',
+              fontSize: '1rem',
+              fontWeight: 'bold',
             }}
             disabled={loading}
           />
