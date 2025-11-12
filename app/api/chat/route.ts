@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
+import OpenAI, { type ChatCompletionMessageParam } from "openai";
 import { createClient } from "@supabase/supabase-js";
 
 // Opret forbindelse til Supabase
@@ -54,21 +54,24 @@ export async function POST(req: Request) {
 
     if (fetchError) throw fetchError;
 
-    // Tilføj systemprompt + tidligere beskeder
-    const messagesForAI = [
+    // Byg besked-array med korrekt type
+    const messagesForAI: ChatCompletionMessageParam[] = [
       {
         role: "system",
         content:
           "Du er Zaxis AgentChat – en AI-assistent der kan huske tidligere beskeder i denne samtale. Du gemmer alt i en database og kan derfor referere til, hvad brugeren tidligere har skrevet. Du skal svare på dansk, professionelt og kortfattet.",
       },
-      ...(recentMessages || []).map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      })),
-      { role: "user", content: message },
+      ...(recentMessages || []).map(
+        (msg) =>
+          ({
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+          }) as ChatCompletionMessageParam
+      ),
+      { role: "user", content: message } as ChatCompletionMessageParam,
     ];
 
-    // Send konteksten til OpenAI
+    // Send til OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: messagesForAI,
@@ -79,7 +82,7 @@ export async function POST(req: Request) {
       completion?.choices?.[0]?.message?.content ||
       "Beklager, jeg kunne ikke generere et svar denne gang.";
 
-    // Gem AI’ens svar i databasen
+    // Gem AI-svaret i databasen
     await supabase.from("messages").insert([
       {
         conversation_id: conversationId,
@@ -89,7 +92,7 @@ export async function POST(req: Request) {
       },
     ]);
 
-    // Returnér AI’ens svar og samtale-id til frontend
+    // Returnér AI’ens svar
     return NextResponse.json({
       reply,
       conversation_id: conversationId,
