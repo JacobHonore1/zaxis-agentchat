@@ -1,137 +1,96 @@
 import { NextResponse } from "next/server";
+import { google } from "googleapis";
 import OpenAI from "openai";
-import { createClient } from "@supabase/supabase-js";
-
-// === Environment checks ===
-console.log("🧠 OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
-console.log("🔑 SUPABASE_URL:", process.env.SUPABASE_URL);
-console.log("🔑 SUPABASE_SERVICE_ROLE_KEY findes:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-// === Validate environment ===
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("❌ Manglende Supabase environment variables!");
-  throw new Error("SUPABASE_URL eller SUPABASE_SERVICE_ROLE_KEY mangler i Vercel environment.");
-}
-
-if (!process.env.OPENAI_API_KEY) {
-  console.error("❌ OPENAI_API_KEY mangler!");
-  throw new Error("OPENAI_API_KEY mangler i environment.");
-}
-
-// === Setup clients ===
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import pdfParse from "pdf-parse";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-// === API handler ===
+// Din Google Drive mappe ID
+const FOLDER_ID = "1ejPRZ-aFHmUf6wiwhZPABDXoIQ7PnG_q";
+
+// Funktion til at hente tekst fra Google Drive
+async function fetchDriveKnowledge(): Promise<string> {
+  try {
+    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_KEY || "{}");
+
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    });
+
+    const drive = google.drive({ version: "v3", auth });
+
+    const res = await drive.files.list({
+      q: `'${FOLDER_ID}' in parents`,
+      fields: "files(id, name, mimeType)",
+    });
+
+    const files = res.data.files || [];
+    let allText = "";
+
+    for (const file of files) {
+      try {
+        if (file.mimeType === "application/pdf") {
+          const fileData = await drive.files.get(
+            { fileId: file.id!, alt: "media" },
+            { responseType: "arraybuffer" }
+          );
+
+          const buffer = Buffer.from(fileData.data as ArrayBuffer);
+          const parsed = await pdfParse(buffer);
+          allText += `\n---\n${file.name}:\n${parsed.text.slice(0, 5000)}`;
+        }
+      } catch (err) {
+        console.error(`Fejl ved læsning af ${file.name}:`, err);
+      }
+    }
+
+    return allText || "Ingen data fundet i Drive-filerne.";
+  } catch (error) {
+    console.error("Fejl i fetchDriveKnowledge:", error);
+    return "Kunne ikke hente viden fra Google Drive.";
+  }
+}
+
 export async function POST(req: Request) {
   try {
-    const { message, conversation_id } = await req.json();
-
+    const { message } = await req.json();
     if (!message) {
-      console.warn("⚠️ Ingen besked modtaget fra frontend");
       return NextResponse.json({ error: "Ingen besked modtaget" }, { status: 400 });
     }
 
-    // === Hent eller opret samtale ===
-    let convId = conversation_id;
-    if (!convId) {
-      const { data: newConv, error: convError } = await supabase
-        .from("conversations")
-        .insert([{ agent_type: "default" }])
-        .select()
-        .single();
+    // Hent viden fra Google Drive
+    const knowledge = await fetchDriveKnowledge();
 
-      if (convError) {
-        console.error("❌ Fejl ved oprettelse af samtale:", convError);
-        return NextResponse.json({ error: "Kunne ikke oprette samtale" }, { status: 500 });
-      }
-      convId = newConv.id;
-    }
+    // Sammensæt systemprompt
+    const systemPrompt = `
+Du er en intern AI-assistent hos Virtoo.ai.
+Brug nedenstående virksomhedsviden fra Google Drive, når du svarer på spørgsmål.
 
-    // === Gem brugerens besked ===
-    const { error: insertError } = await supabase.from("messages").insert([
-      {
-        conversation_id: convId,
-        sender: "user",
-        role: "user",
-        content: message,
-      },
-    ]);
+VIDEN FRA DOKUMENTER:
+${knowledge}
+---
 
-    if (insertError) {
-      console.error("❌ Fejl ved indsættelse af brugerbesked:", insertError);
-      return NextResponse.json({ error: "Kunne ikke gemme besked" }, { status: 500 });
-    }
+Svar altid tydeligt, med afsnit, overskrifter og evt. punktlister.
+Brug fed skrift til nøgleord og skriv på dansk, med professionel tone.
+`;
 
-    // === Hent tidligere beskeder for hukommelse ===
-    const { data: pastMessages, error: fetchError } = await supabase
-      .from("messages")
-      .select("role, content")
-      .eq("conversation_id", convId)
-      .order("id", { ascending: true });
-
-    if (fetchError) {
-      console.error("⚠️ Kunne ikke hente tidligere beskeder:", fetchError);
-    }
-
-    // === Byg kontekst til OpenAI ===
-    const history = (pastMessages || []).map((m) => ({
-      role: m.role as "user" | "assistant" | "system",
-      content: m.content,
-    }));
-
-    // Tilføj systemprompt og ny besked
-    const messagesForAI = [
-      { role: "system", content: "Du er en hjælpsom dansk assistent, der husker konteksten af samtaler." },
-      ...history,
-      { role: "user", content: message },
-    ];
-
-    console.log(`🧩 Sender ${messagesForAI.length} beskeder til OpenAI (inkl. historik)`);
-
-    // === Kald OpenAI ===
-    let reply: string | undefined;
-    try {
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: messagesForAI as any,
-        temperature: 0.7,
-      });
-      reply = completion.choices?.[0]?.message?.content?.trim();
-      console.log("🤖 AI svarer:", reply);
-    } catch (apiError: any) {
-      console.error("🚨 OpenAI fejlede:", apiError);
-      reply = "Beklager, jeg kunne ikke få svar fra OpenAI.";
-    }
-
-    if (!reply) reply = "Beklager, jeg har ikke noget svar denne gang.";
-
-    // === Gem AI’s svar ===
-    await supabase.from("messages").insert([
-      {
-        conversation_id: convId,
-        sender: "assistant",
-        role: "assistant",
-        content: reply,
-      },
-    ]);
-
-    return NextResponse.json({ reply, conversation_id: convId });
-  } catch (error: any) {
-    console.error("💥 Fejl i /api/chat route:", {
-      message: error.message,
-      stack: error.stack,
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+      ],
+      temperature: 0.7,
     });
 
-    return NextResponse.json(
-      { error: "Intern serverfejl – se logs for detaljer" },
-      { status: 500 }
-    );
+    const reply = completion.choices[0].message?.content || "Intet svar fra modellen.";
+
+    return NextResponse.json({ reply });
+  } catch (error: any) {
+    console.error("Fejl i /api/chat:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
