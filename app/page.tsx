@@ -100,7 +100,6 @@ export default function ChatPage() {
         fontFamily: 'Inter, sans-serif',
       }}
     >
-      {/* Indpak alt for at fjerne browser scroll og hvide kanter */}
       <style jsx global>{`
         html,
         body {
@@ -108,6 +107,21 @@ export default function ChatPage() {
           padding: 0;
           overflow: hidden;
           background-color: #002233;
+        }
+
+        /* Scrollbar styling i chatvinduet */
+        .chat-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+          background-color: #4ecdc4;
+          border-radius: 10px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+          background-color: #3cb6ae;
         }
       `}</style>
 
@@ -127,7 +141,7 @@ export default function ChatPage() {
         {/* Header */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #003355, #6ba8ff)',
+            background: 'linear-gradient(135deg, #002b44 0%, #4e9fe3 100%)',
             padding: '18px 24px',
             display: 'flex',
             alignItems: 'center',
@@ -148,19 +162,20 @@ export default function ChatPage() {
           <Image
             src="/VITROO logo_Black.png"
             alt="Virtoo logo"
-            width={60}
-            height={60}
+            width={90}
+            height={90}
             style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
           />
         </div>
 
         {/* Chatvindue */}
         <div
+          className="chat-scroll"
           style={{
             flex: 1,
             padding: '20px',
             overflowY: 'auto',
-            background: 'linear-gradient(145deg, #4ECDC4 0%, #6C63FF 100%)',
+            background: 'linear-gradient(to bottom, rgba(0,51,85,0.9) 0%, #cde7ff 100%)',
             color: '#002233',
           }}
         >
