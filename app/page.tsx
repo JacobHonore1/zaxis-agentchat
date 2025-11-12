@@ -8,7 +8,7 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Hent evt. tidligere conversation_id fra localStorage
+  // Hent tidligere conversation_id fra localStorage (hvis det findes)
   useEffect(() => {
     const storedId = localStorage.getItem('conversation_id');
     if (storedId) {
@@ -17,6 +17,7 @@ export default function ChatPage() {
     }
   }, []);
 
+  // Funktion til at sende beskeder
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -59,6 +60,14 @@ export default function ChatPage() {
     }
   };
 
+  // Funktion til at nulstille samtalen
+  const resetConversation = () => {
+    localStorage.removeItem('conversation_id');
+    setConversationId(null);
+    setMessages([]);
+    alert('🧹 Samtalen er nulstillet! AI starter forfra næste gang du sender en besked.');
+  };
+
   return (
     <div style={{ maxWidth: 600, margin: '40px auto', fontFamily: 'sans-serif' }}>
       <h1 style={{ textAlign: 'center' }}>Zaxis AgentChat</h1>
@@ -73,17 +82,23 @@ export default function ChatPage() {
           background: '#fafafa',
         }}
       >
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              textAlign: msg.role === 'user' ? 'right' : 'left',
-              marginBottom: 8,
-            }}
-          >
-            <strong>{msg.role === 'user' ? 'Du:' : 'AI:'}</strong> {msg.content}
-          </div>
-        ))}
+        {messages.length === 0 ? (
+          <p style={{ color: '#888', textAlign: 'center' }}>
+            Start en samtale for at se beskeder her.
+          </p>
+        ) : (
+          messages.map((msg, i) => (
+            <div
+              key={i}
+              style={{
+                textAlign: msg.role === 'user' ? 'right' : 'left',
+                marginBottom: 8,
+              }}
+            >
+              <strong>{msg.role === 'user' ? 'Du:' : 'AI:'}</strong> {msg.content}
+            </div>
+          ))
+        )}
       </div>
 
       <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
@@ -114,6 +129,23 @@ export default function ChatPage() {
           }}
         >
           {loading ? 'Sender...' : 'Send'}
+        </button>
+      </div>
+
+      {/* Nulstil-knap */}
+      <div style={{ textAlign: 'center', marginTop: 12 }}>
+        <button
+          onClick={resetConversation}
+          style={{
+            background: '#ccc',
+            color: '#000',
+            border: 'none',
+            borderRadius: 4,
+            padding: '6px 12px',
+            cursor: 'pointer',
+          }}
+        >
+          🔄 Nulstil samtale
         </button>
       </div>
     </div>
