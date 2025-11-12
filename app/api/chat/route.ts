@@ -20,7 +20,6 @@ export async function POST(req: Request) {
   try {
     const { message } = await req.json();
 
-    // Hvis beskeden mangler
     if (!message) {
       console.error("⚠️ Ingen besked modtaget fra frontend");
       return NextResponse.json(
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Opret ny samtale (for test – kan senere kobles til bruger-id)
+    // Opret ny samtale
     const { data: conversation, error: convError } = await supabase
       .from("conversations")
       .insert([{ agent_type: "default" }])
@@ -44,7 +43,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Gem brugerens besked i Supabase
+    // Gem brugerens besked
     await supabase.from("messages").insert([
       {
         conversation_id: conversation.id,
@@ -56,7 +55,7 @@ export async function POST(req: Request) {
 
     console.log("📨 Brugerbesked gemt:", message);
 
-    // Kald OpenAI med kontekst
+    // Definér beskeder til OpenAI (cast som korrekt type)
     const messagesForAI = [
       {
         role: "system",
@@ -64,12 +63,12 @@ export async function POST(req: Request) {
           "Du er en hjælpsom dansk assistent, som besvarer spørgsmål naturligt og præcist.",
       },
       { role: "user", content: message },
-    ];
+    ] as Array<{ role: "system" | "user" | "assistant"; content: string }>;
 
-    // Kalder OpenAI API
+    // Kald OpenAI API — cast som korrekt type
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: messagesForAI,
+      messages: messagesForAI as any, // <— vigtig rettelse her
       temperature: 0.7,
     });
 
