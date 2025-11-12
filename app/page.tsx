@@ -12,17 +12,14 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Fokus i inputfeltet
   useEffect(() => {
     inputRef.current?.focus();
   }, [loading]);
 
-  // Scroll til bund
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // conversation_id
   useEffect(() => {
     let storedId = localStorage.getItem('conversation_id');
     if (!storedId) {
@@ -34,7 +31,6 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
-
     const userMessage = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
@@ -49,9 +45,7 @@ export default function ChatPage() {
           message: input,
         }),
       });
-
       const data = await res.json();
-
       if (data.reply) {
         const botMessage = { role: 'assistant', content: data.reply };
         setMessages((prev) => [...prev, botMessage]);
@@ -75,14 +69,20 @@ export default function ChatPage() {
     inputRef.current?.focus();
   };
 
+  // Formatér tekst med fed skrift hvor * eller ** bruges
   const renderFormattedContent = (text: string) => {
-    const lines = text.split('\n').filter((l) => l.trim() !== '');
-    return lines.map((line, i) => {
-      if (line.startsWith('###')) return <h3 key={i}>{line.replace('###', '').trim()}</h3>;
-      if (line.startsWith('**')) return <strong key={i}>{line.replace(/\*\*/g, '')}</strong>;
-      if (line.startsWith('- ')) return <li key={i}>{line.replace('- ', '').trim()}</li>;
-      return <p key={i}>{line}</p>;
-    });
+    const boldRegex = /(\*\*?)(.*?)\1/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = boldRegex.exec(text)) !== null) {
+      if (match.index > lastIndex)
+        parts.push(text.substring(lastIndex, match.index));
+      parts.push(<strong key={match.index}>{match[2]}</strong>);
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) parts.push(text.substring(lastIndex));
+    return parts.map((part, i) => <span key={i}>{part}</span>);
   };
 
   return (
@@ -108,8 +108,6 @@ export default function ChatPage() {
           overflow: hidden;
           background-color: #002233;
         }
-
-        /* Scrollbar styling i chatvinduet */
         .chat-scroll::-webkit-scrollbar {
           width: 6px;
         }
@@ -117,11 +115,11 @@ export default function ChatPage() {
           background: transparent;
         }
         .chat-scroll::-webkit-scrollbar-thumb {
-          background-color: #4ecdc4;
+          background-color: #002233;
           border-radius: 10px;
         }
         .chat-scroll::-webkit-scrollbar-thumb:hover {
-          background-color: #3cb6ae;
+          background-color: #003355;
         }
       `}</style>
 
@@ -133,9 +131,9 @@ export default function ChatPage() {
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 20,
-          background: 'linear-gradient(180deg, #f4f8fb 0%, #f9f9fb 100%)',
           boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
           overflow: 'hidden',
+          background: 'linear-gradient(180deg, #002b44 0%, #004d66 100%)',
         }}
       >
         {/* Header */}
@@ -175,18 +173,17 @@ export default function ChatPage() {
             flex: 1,
             padding: '20px',
             overflowY: 'auto',
-            background: 'linear-gradient(to bottom, rgba(0,51,85,0.9) 0%, #cde7ff 100%)',
-            color: '#002233',
+            background: 'linear-gradient(to bottom, #003355 0%, #004d66 100%)',
+            color: '#ffffff',
           }}
         >
           {messages.length === 0 ? (
             <p
               style={{
-                color: 'white',
+                color: 'rgba(255,255,255,0.7)',
                 textAlign: 'center',
                 marginTop: 60,
                 fontSize: '1.1rem',
-                opacity: 0.8,
               }}
             >
               Start en samtale for at komme i gang.
@@ -208,12 +205,12 @@ export default function ChatPage() {
                     background:
                       msg.role === 'user'
                         ? 'rgba(255, 255, 255, 0.15)'
-                        : 'rgba(255, 255, 255, 0.9)',
-                    color: msg.role === 'user' ? '#fff' : '#002233',
+                        : 'rgba(0, 0, 0, 0.25)',
+                    color: msg.role === 'user' ? '#fff' : '#e6f3ff',
                     maxWidth: '80%',
                     wordBreak: 'break-word',
                     textAlign: 'left',
-                    backdropFilter: 'blur(6px)',
+                    lineHeight: '1.5',
                   }}
                 >
                   {msg.role === 'assistant'
@@ -224,7 +221,6 @@ export default function ChatPage() {
             ))
           )}
 
-          {/* Loading indikator */}
           {loading && (
             <div style={{ textAlign: 'left', margin: '10px 0 0 10px' }}>
               <div className="dot-flashing" />
@@ -263,7 +259,7 @@ export default function ChatPage() {
         {/* Footer */}
         <div
           style={{
-            borderTop: '1px solid rgba(255,255,255,0.2)',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
             background: '#003355',
             padding: '12px',
             display: 'flex',
