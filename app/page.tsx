@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
@@ -11,22 +12,24 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Fokus på inputfeltet ved indlæsning
+  // Fokus i inputfeltet
   useEffect(() => {
     inputRef.current?.focus();
   }, [loading]);
 
-  // Scroll til bund når nye beskeder tilføjes
+  // Scroll til bund
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Hent tidligere conversation_id fra localStorage
+  // conversation_id
   useEffect(() => {
-    const storedId = localStorage.getItem('conversation_id');
-    if (storedId) {
-      setConversationId(storedId);
+    let storedId = localStorage.getItem('conversation_id');
+    if (!storedId) {
+      storedId = uuidv4();
+      localStorage.setItem('conversation_id', storedId);
     }
+    setConversationId(storedId);
   }, []);
 
   const sendMessage = async () => {
@@ -52,11 +55,6 @@ export default function ChatPage() {
       if (data.reply) {
         const botMessage = { role: 'assistant', content: data.reply };
         setMessages((prev) => [...prev, botMessage]);
-      }
-
-      if (data.conversation_id && !conversationId) {
-        setConversationId(data.conversation_id);
-        localStorage.setItem('conversation_id', data.conversation_id);
       }
     } catch (err) {
       console.error('🚨 Fejl ved afsendelse:', err);
@@ -90,35 +88,47 @@ export default function ChatPage() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100vh',
         width: '100vw',
+        overflow: 'hidden',
         margin: 0,
         padding: 0,
         display: 'flex',
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
         background: '#002233',
         fontFamily: 'Inter, sans-serif',
       }}
     >
+      {/* Indpak alt for at fjerne browser scroll og hvide kanter */}
+      <style jsx global>{`
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          background-color: #002233;
+        }
+      `}</style>
+
       <div
         style={{
           width: '100%',
-          maxWidth: 720,
-          height: '90vh',
+          maxWidth: 800,
+          height: '92vh',
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 20,
-          backgroundColor: 'white',
-          overflow: 'hidden',
+          background: 'linear-gradient(180deg, #f4f8fb 0%, #f9f9fb 100%)',
           boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+          overflow: 'hidden',
         }}
       >
         {/* Header */}
         <div
           style={{
-            background: '#cde7ff',
-            padding: '16px 20px',
+            background: 'linear-gradient(135deg, #003355, #6ba8ff)',
+            padding: '18px 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -126,25 +136,22 @@ export default function ChatPage() {
         >
           <h1
             style={{
-              fontSize: '1.2rem',
+              fontSize: '1.3rem',
               fontWeight: 600,
-              color: '#002233',
+              color: '#ffffff',
               margin: 0,
             }}
           >
             Virtoo_internal_agent_demo
           </h1>
 
-          {/* Logo – placer i højre side */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Image
-              src="/logo.png"
-              alt="Virtoo logo"
-              width={40}
-              height={40}
-              style={{ objectFit: 'contain' }}
-            />
-          </div>
+          <Image
+            src="/VITROO logo_Black.png"
+            alt="Virtoo logo"
+            width={60}
+            height={60}
+            style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+          />
         </div>
 
         {/* Chatvindue */}
@@ -153,11 +160,20 @@ export default function ChatPage() {
             flex: 1,
             padding: '20px',
             overflowY: 'auto',
-            background: '#f9f9fb',
+            background: 'linear-gradient(145deg, #4ECDC4 0%, #6C63FF 100%)',
+            color: '#002233',
           }}
         >
           {messages.length === 0 ? (
-            <p style={{ color: '#888', textAlign: 'center', marginTop: 40 }}>
+            <p
+              style={{
+                color: 'white',
+                textAlign: 'center',
+                marginTop: 60,
+                fontSize: '1.1rem',
+                opacity: 0.8,
+              }}
+            >
               Start en samtale for at komme i gang.
             </p>
           ) : (
@@ -176,12 +192,13 @@ export default function ChatPage() {
                     borderRadius: 16,
                     background:
                       msg.role === 'user'
-                        ? 'linear-gradient(135deg, #6C63FF, #4ECDC4)'
-                        : '#e6f3ff',
-                    color: msg.role === 'user' ? 'white' : '#002233',
+                        ? 'rgba(255, 255, 255, 0.15)'
+                        : 'rgba(255, 255, 255, 0.9)',
+                    color: msg.role === 'user' ? '#fff' : '#002233',
                     maxWidth: '80%',
                     wordBreak: 'break-word',
                     textAlign: 'left',
+                    backdropFilter: 'blur(6px)',
                   }}
                 >
                   {msg.role === 'assistant'
@@ -200,23 +217,23 @@ export default function ChatPage() {
                 {`
                 .dot-flashing {
                   position: relative;
-                  width: 8px;
-                  height: 8px;
+                  width: 6px;
+                  height: 6px;
                   border-radius: 50%;
-                  background-color: #6C63FF;
+                  background-color: #ffffff;
                   animation: dot-flashing 1s infinite linear alternate;
                 }
                 .dot-flashing::before, .dot-flashing::after {
                   content: '';
                   position: absolute;
                   top: 0;
-                  width: 8px;
-                  height: 8px;
+                  width: 6px;
+                  height: 6px;
                   border-radius: 50%;
-                  background-color: #6C63FF;
+                  background-color: #ffffff;
                 }
-                .dot-flashing::before { left: -14px; animation: dot-flashing 1s infinite alternate; }
-                .dot-flashing::after { left: 14px; animation: dot-flashing 1s infinite alternate; }
+                .dot-flashing::before { left: -10px; animation: dot-flashing 1s infinite alternate; }
+                .dot-flashing::after { left: 10px; animation: dot-flashing 1s infinite alternate; }
                 @keyframes dot-flashing {
                   0% { opacity: 0.2; }
                   50%, 100% { opacity: 1; }
@@ -231,8 +248,8 @@ export default function ChatPage() {
         {/* Footer */}
         <div
           style={{
-            borderTop: '1px solid #ddd',
-            background: '#fff',
+            borderTop: '1px solid rgba(255,255,255,0.2)',
+            background: '#003355',
             padding: '12px',
             display: 'flex',
             alignItems: 'center',
@@ -250,9 +267,11 @@ export default function ChatPage() {
               flex: 1,
               padding: '10px 14px',
               borderRadius: 12,
-              border: '1px solid #ccc',
+              border: 'none',
               fontSize: '1rem',
               fontWeight: 'bold',
+              color: '#002233',
+              background: '#ffffff',
             }}
             disabled={loading}
           />
