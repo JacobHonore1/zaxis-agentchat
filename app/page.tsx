@@ -9,13 +9,19 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Tildel conversation_id hvis ikke findes
+  // Opret eller hent conversation_id
   useEffect(() => {
     let conversationId = localStorage.getItem('conversation_id');
     if (!conversationId) {
       conversationId = uuidv4();
       localStorage.setItem('conversation_id', conversationId);
     }
+
+    // Fjerner kant og scrollbar fra body
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.backgroundColor = '#002233';
+    document.body.style.overflow = 'hidden';
   }, []);
 
   const sendMessage = async () => {
@@ -49,15 +55,17 @@ export default function ChatPage() {
   return (
     <div
       style={{
-        backgroundColor: '#002233',
-        minHeight: '100vh',
-        margin: 0,
-        padding: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'linear-gradient(to bottom, #00334d, #001a26)',
+        color: 'white',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
+        fontFamily: 'sans-serif',
       }}
     >
+      {/* Header */}
       <div
         style={{
           background: 'linear-gradient(to bottom, #004466, #002233)',
@@ -66,23 +74,37 @@ export default function ChatPage() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          flexShrink: 0,
         }}
       >
         <h1 style={{ margin: 0 }}>Virtoo_internal_agent_demo</h1>
         <img src="/VITROO logo_Black.png" alt="Virtoo Logo" style={{ height: 60 }} />
       </div>
 
+      {/* Chatfelt */}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: 24,
-          color: 'white',
-          background: 'linear-gradient(to top, #00334d, #004466)',
+          padding: '20px 40px',
+          background: 'linear-gradient(to top, #002a3d, #00334d)',
           scrollbarWidth: 'thin',
-          scrollbarColor: '#002233 transparent',
+          scrollbarColor: '#002233 #001a26',
         }}
       >
+        <style jsx global>{`
+          ::-webkit-scrollbar {
+            width: 6px;
+          }
+          ::-webkit-scrollbar-track {
+            background: #001a26;
+          }
+          ::-webkit-scrollbar-thumb {
+            background-color: #002233;
+            border-radius: 3px;
+          }
+        `}</style>
+
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -102,23 +124,29 @@ export default function ChatPage() {
                 maxWidth: '80%',
                 wordWrap: 'break-word',
                 textAlign: 'left',
+                lineHeight: 1.6,
               }}
             >
               <ReactMarkdown>{msg.content}</ReactMarkdown>
             </div>
           </div>
         ))}
+
         {loading && (
-          <div style={{ color: '#aaa', marginLeft: 10, fontStyle: 'italic' }}>AI skriver<span className="dots">...</span></div>
+          <div style={{ color: '#ccc', marginTop: 8 }}>
+            AI skriver<span className="dots">...</span>
+          </div>
         )}
       </div>
 
+      {/* Inputfelt */}
       <div
         style={{
           display: 'flex',
           gap: 8,
-          padding: '12px 24px',
+          padding: '16px 24px',
           backgroundColor: '#001a26',
+          flexShrink: 0,
         }}
       >
         <input
@@ -147,6 +175,7 @@ export default function ChatPage() {
             borderRadius: 8,
             padding: '12px 20px',
             cursor: 'pointer',
+            fontWeight: 'bold',
           }}
         >
           Send
@@ -160,6 +189,7 @@ export default function ChatPage() {
             borderRadius: 8,
             padding: '12px 20px',
             cursor: 'pointer',
+            fontWeight: 'bold',
           }}
         >
           Nulstil
