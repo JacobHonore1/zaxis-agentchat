@@ -2,33 +2,53 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 
-// Log om miljøvariablen er korrekt indlæst
+// === ENVIRONMENT CHECKS ===
 console.log("🧠 OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
+console.log("🔑 SUPABASE_URL:", process.env.SUPABASE_URL);
+console.log("🔑 SUPABASE_SERVICE_ROLE_KEY findes:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Opret forbindelse til Supabase
+// === Validate that all critical env vars exist ===
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("❌ Manglende Supabase environment variables!");
+  throw new Error("SUPABASE_URL eller SUPABASE_SERVICE_ROLE_KEY mangler i Vercel environment.");
+}
+
+if (!process.env.OPENAI_API_KEY) {
+  console.error("❌ OPENAI_API_KEY mangler i environment!");
+  throw new Error("OPENAI_API_KEY mangler i Vercel environment.");
+}
+
+// === Setup clients ===
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Initialiser OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
+// === API route handler ===
 export async function POST(req: Request) {
   try {
     const { message } = await req.json();
 
     if (!message) {
-      console.error("⚠️ Ingen besked modtaget fra frontend");
-      return NextResponse.json(
-        { error: "Ingen besked modtaget" },
-        { status: 400 }
-      );
+      console.warn("⚠️ Ingen besked modtaget fra frontend");
+      return NextResponse.json({ error: "Ingen besked modtaget" }, { status: 400 });
     }
 
-    // Opret ny samtale
+    // Test Supabase connection first
+    try {
+      const { data: testData, error: testError } = await supabase.from("messages").select("*").limit(1);
+      if (testError) throw testError;
+      console.log("✅ Supabase forbindelse OK");
+    } catch (dbTestErr) {
+      console.error("❌ Supabase fetch test fejlede:", dbTestErr);
+      return NextResponse.json({ error: "Fejl ved forbindelse til Supabase – tjek env vars" }, { status: 500 });
+    }
+
+    // Create a new conversation entry
     const { data: conversation, error: convError } = await supabase
       .from("conversations")
       .insert([{ agent_type: "default" }])
@@ -36,14 +56,11 @@ export async function POST(req: Request) {
       .single();
 
     if (convError) {
-      console.error("❌ Fejl ved oprettelse af samtale:", convError.message);
-      return NextResponse.json(
-        { error: "Kunne ikke oprette samtale" },
-        { status: 500 }
-      );
+      console.error("❌ Fejl ved oprettelse af samtale:", convError);
+      return NextResponse.json({ error: "Kunne ikke oprette samtale i databasen" }, { status: 500 });
     }
 
-    // Gem brugerens besked
+    // Insert user message
     await supabase.from("messages").insert([
       {
         conversation_id: conversation.id,
@@ -55,36 +72,34 @@ export async function POST(req: Request) {
 
     console.log("📨 Brugerbesked gemt:", message);
 
-    // Definér beskeder til OpenAI (cast som korrekt type)
+    // Prepare messages for AI
     const messagesForAI = [
-      {
-        role: "system",
-        content:
-          "Du er en hjælpsom dansk assistent, som besvarer spørgsmål naturligt og præcist.",
-      },
+      { role: "system", content: "Du er en hjælpsom dansk assistent." },
       { role: "user", content: message },
-    ] as Array<{ role: "system" | "user" | "assistant"; content: string }>;
+    ];
 
-    // Kald OpenAI API — cast som korrekt type
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: messagesForAI as any, // <— vigtig rettelse her
-      temperature: 0.7,
-    });
+    let reply: string | undefined;
 
-    const reply = completion.choices?.[0]?.message?.content?.trim();
+    // Call OpenAI
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: messagesForAI as any,
+        temperature: 0.7,
+      });
 
-    if (!reply) {
-      console.error("⚠️ Ingen svar fra OpenAI:", completion);
-      return NextResponse.json(
-        { error: "Ingen svar fra AI" },
-        { status: 500 }
-      );
+      reply = completion.choices?.[0]?.message?.content?.trim();
+      console.log("🤖 AI svarer:", reply);
+    } catch (apiError: any) {
+      console.error("🚨 OpenAI fetch fejlede:", apiError);
+      reply = "Beklager, jeg kunne ikke kontakte OpenAI lige nu.";
     }
 
-    console.log("🤖 AI svarer:", reply);
+    if (!reply) {
+      reply = "Beklager, jeg fik ikke noget svar denne gang.";
+    }
 
-    // Gem AI-svar i Supabase
+    // Save AI reply
     await supabase.from("messages").insert([
       {
         conversation_id: conversation.id,
@@ -94,12 +109,11 @@ export async function POST(req: Request) {
       },
     ]);
 
-    // Returnér svaret til frontend
     return NextResponse.json({ reply });
   } catch (error: any) {
     console.error("💥 Fejl i /api/chat route:", {
       message: error.message,
-      details: error.stack,
+      stack: error.stack,
     });
 
     return NextResponse.json(
