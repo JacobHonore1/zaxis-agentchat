@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import OpenAI, { type ChatCompletionMessageParam } from "openai";
+import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 
 // Opret forbindelse til Supabase
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       },
     ]);
 
-    // Hent tidligere beskeder fra denne samtale
+    // Hent tidligere beskeder
     const { data: recentMessages, error: fetchError } = await supabase
       .from("messages")
       .select("role, content")
@@ -54,22 +54,19 @@ export async function POST(req: Request) {
 
     if (fetchError) throw fetchError;
 
-    // Byg besked-array med korrekt type
-    const messagesForAI: ChatCompletionMessageParam[] = [
+    // Byg korrekt formateret array
+    const messagesForAI = [
       {
         role: "system",
         content:
           "Du er Zaxis AgentChat – en AI-assistent der kan huske tidligere beskeder i denne samtale. Du gemmer alt i en database og kan derfor referere til, hvad brugeren tidligere har skrevet. Du skal svare på dansk, professionelt og kortfattet.",
       },
-      ...(recentMessages || []).map(
-        (msg) =>
-          ({
-            role: msg.role as "user" | "assistant",
-            content: msg.content,
-          }) as ChatCompletionMessageParam
-      ),
-      { role: "user", content: message } as ChatCompletionMessageParam,
-    ];
+      ...(recentMessages || []).map((m) => ({
+        role: m.role as "user" | "assistant" | "system",
+        content: m.content,
+      })),
+      { role: "user", content: message },
+    ] as OpenAI.Chat.Completions.ChatCompletionMessageParam[]; // 👈 Type hentet fra nyt namespace
 
     // Send til OpenAI
     const completion = await openai.chat.completions.create({
@@ -82,7 +79,7 @@ export async function POST(req: Request) {
       completion?.choices?.[0]?.message?.content ||
       "Beklager, jeg kunne ikke generere et svar denne gang.";
 
-    // Gem AI-svaret i databasen
+    // Gem AI’ens svar
     await supabase.from("messages").insert([
       {
         conversation_id: conversationId,
@@ -92,7 +89,7 @@ export async function POST(req: Request) {
       },
     ]);
 
-    // Returnér AI’ens svar
+    // Returnér svar
     return NextResponse.json({
       reply,
       conversation_id: conversationId,
