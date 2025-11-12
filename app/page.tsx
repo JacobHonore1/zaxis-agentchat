@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
@@ -25,7 +26,6 @@ export default function ChatPage() {
     const storedId = localStorage.getItem('conversation_id');
     if (storedId) {
       setConversationId(storedId);
-      console.log('💬 Fortsætter eksisterende samtale:', storedId);
     }
   }, []);
 
@@ -57,7 +57,6 @@ export default function ChatPage() {
       if (data.conversation_id && !conversationId) {
         setConversationId(data.conversation_id);
         localStorage.setItem('conversation_id', data.conversation_id);
-        console.log('🧠 Nyt conversation_id gemt:', data.conversation_id);
       }
     } catch (err) {
       console.error('🚨 Fejl ved afsendelse:', err);
@@ -78,7 +77,6 @@ export default function ChatPage() {
     inputRef.current?.focus();
   };
 
-  // Enkel formattering af AI-svar med Markdown-lignende visning
   const renderFormattedContent = (text: string) => {
     const lines = text.split('\n').filter((l) => l.trim() !== '');
     return lines.map((line, i) => {
@@ -98,7 +96,7 @@ export default function ChatPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #7b61ff, #5ee7df)',
+        background: '#002233', // 🌙 mørk baggrund
         fontFamily: 'Inter, sans-serif',
       }}
     >
@@ -111,23 +109,41 @@ export default function ChatPage() {
           flexDirection: 'column',
           borderRadius: 20,
           backgroundColor: 'white',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
           overflow: 'hidden',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
         }}
       >
         {/* Header */}
         <div
           style={{
-            background: 'linear-gradient(90deg, #6C63FF, #4ECDC4)',
-            padding: '16px',
-            textAlign: 'center',
-            color: 'white',
-            fontWeight: 600,
-            fontSize: '1.2rem',
-            letterSpacing: '0.5px',
+            background: '#cde7ff', // 🌤️ pale blue
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          Zaxis AgentChat
+          <h1
+            style={{
+              fontSize: '1.2rem',
+              fontWeight: 600,
+              color: '#002233',
+              margin: 0,
+            }}
+          >
+            Virtoo_internal_agent_demo
+          </h1>
+
+          {/* Logo – placer i højre side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Image
+              src="/virtoo-logo.png"
+              alt="Virtoo logo"
+              width={36}
+              height={36}
+              style={{ objectFit: 'contain' }}
+            />
+          </div>
         </div>
 
         {/* Chatvindue */}
@@ -160,8 +176,8 @@ export default function ChatPage() {
                     background:
                       msg.role === 'user'
                         ? 'linear-gradient(135deg, #6C63FF, #4ECDC4)'
-                        : '#ececff',
-                    color: msg.role === 'user' ? 'white' : '#333',
+                        : '#e6f3ff',
+                    color: msg.role === 'user' ? 'white' : '#002233',
                     maxWidth: '80%',
                     wordBreak: 'break-word',
                     textAlign: 'left',
@@ -175,7 +191,7 @@ export default function ChatPage() {
             ))
           )}
 
-          {/* Tre dansende prikker ved loading */}
+          {/* Loading indikator */}
           {loading && (
             <div style={{ textAlign: 'left', margin: '10px 0 0 10px' }}>
               <div className="dot-flashing" />
@@ -187,31 +203,19 @@ export default function ChatPage() {
                   height: 12px;
                   border-radius: 6px;
                   background-color: #6C63FF;
-                  color: #6C63FF;
                   animation: dot-flashing 1s infinite linear alternate;
-                  animation-delay: .5s;
                 }
                 .dot-flashing::before, .dot-flashing::after {
                   content: '';
-                  display: inline-block;
                   position: absolute;
                   top: 0;
                   width: 12px;
                   height: 12px;
                   border-radius: 6px;
                   background-color: #6C63FF;
-                  color: #6C63FF;
                 }
-                .dot-flashing::before {
-                  left: -20px;
-                  animation: dot-flashing 1s infinite alternate;
-                  animation-delay: 0s;
-                }
-                .dot-flashing::after {
-                  left: 20px;
-                  animation: dot-flashing 1s infinite alternate;
-                  animation-delay: 1s;
-                }
+                .dot-flashing::before { left: -20px; animation: dot-flashing 1s infinite alternate; }
+                .dot-flashing::after { left: 20px; animation: dot-flashing 1s infinite alternate; }
                 @keyframes dot-flashing {
                   0% { opacity: 0.2; }
                   50%, 100% { opacity: 1; }
@@ -223,12 +227,12 @@ export default function ChatPage() {
           <div ref={chatEndRef} />
         </div>
 
-        {/* Inputfelt + footer */}
+        {/* Footer */}
         <div
           style={{
-            borderTop: '1px solid #eee',
+            borderTop: '1px solid #ddd',
             background: '#fff',
-            padding: '12px 12px',
+            padding: '12px',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
@@ -263,7 +267,6 @@ export default function ChatPage() {
               padding: '10px 16px',
               fontWeight: 600,
               cursor: loading ? 'default' : 'pointer',
-              transition: 'opacity 0.2s',
               flexShrink: 0,
             }}
           >
