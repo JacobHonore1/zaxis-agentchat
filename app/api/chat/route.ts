@@ -2,102 +2,109 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 
+// Log om miljøvariablen er korrekt indlæst
+console.log("🧠 OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
+
 // Opret forbindelse til Supabase
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Opret forbindelse til OpenAI
+// Initialiser OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
 export async function POST(req: Request) {
   try {
-    const { message, conversation_id } = await req.json();
+    const { message } = await req.json();
 
+    // Hvis beskeden mangler
     if (!message) {
-      return NextResponse.json({ error: "Message is required" }, { status: 400 });
+      console.error("⚠️ Ingen besked modtaget fra frontend");
+      return NextResponse.json(
+        { error: "Ingen besked modtaget" },
+        { status: 400 }
+      );
     }
 
-    // Opret ny samtale, hvis ingen ID findes
-    let conversationId = conversation_id;
-    if (!conversationId) {
-      const { data, error } = await supabase
-        .from("conversations")
-        .insert([{ agent_type: "assistant" }])
-        .select("id")
-        .single();
+    // Opret ny samtale (for test – kan senere kobles til bruger-id)
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .insert([{ agent_type: "default" }])
+      .select()
+      .single();
 
-      if (error) throw error;
-      conversationId = data.id;
+    if (convError) {
+      console.error("❌ Fejl ved oprettelse af samtale:", convError.message);
+      return NextResponse.json(
+        { error: "Kunne ikke oprette samtale" },
+        { status: 500 }
+      );
     }
 
-    // Gem brugerens besked
+    // Gem brugerens besked i Supabase
     await supabase.from("messages").insert([
       {
-        conversation_id: conversationId,
+        conversation_id: conversation.id,
         sender: "user",
         role: "user",
         content: message,
       },
     ]);
 
-    // Hent tidligere beskeder
-    const { data: recentMessages, error: fetchError } = await supabase
-      .from("messages")
-      .select("role, content")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true })
-      .limit(15);
+    console.log("📨 Brugerbesked gemt:", message);
 
-    if (fetchError) throw fetchError;
-
-    // Byg korrekt formateret array
+    // Kald OpenAI med kontekst
     const messagesForAI = [
       {
         role: "system",
         content:
-          "Du er Zaxis AgentChat – en AI-assistent der kan huske tidligere beskeder i denne samtale. Du gemmer alt i en database og kan derfor referere til, hvad brugeren tidligere har skrevet. Du skal svare på dansk, professionelt og kortfattet.",
+          "Du er en hjælpsom dansk assistent, som besvarer spørgsmål naturligt og præcist.",
       },
-      ...(recentMessages || []).map((m) => ({
-        role: m.role as "user" | "assistant" | "system",
-        content: m.content,
-      })),
       { role: "user", content: message },
-    ] as OpenAI.Chat.Completions.ChatCompletionMessageParam[]; // 👈 Type hentet fra nyt namespace
+    ];
 
-    // Send til OpenAI
+    // Kalder OpenAI API
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: messagesForAI,
       temperature: 0.7,
     });
 
-    const reply =
-      completion?.choices?.[0]?.message?.content ||
-      "Beklager, jeg kunne ikke generere et svar denne gang.";
+    const reply = completion.choices?.[0]?.message?.content?.trim();
 
-    // Gem AI’ens svar
+    if (!reply) {
+      console.error("⚠️ Ingen svar fra OpenAI:", completion);
+      return NextResponse.json(
+        { error: "Ingen svar fra AI" },
+        { status: 500 }
+      );
+    }
+
+    console.log("🤖 AI svarer:", reply);
+
+    // Gem AI-svar i Supabase
     await supabase.from("messages").insert([
       {
-        conversation_id: conversationId,
+        conversation_id: conversation.id,
         sender: "assistant",
         role: "assistant",
         content: reply,
       },
     ]);
 
-    // Returnér svar
-    return NextResponse.json({
-      reply,
-      conversation_id: conversationId,
-    });
+    // Returnér svaret til frontend
+    return NextResponse.json({ reply });
   } catch (error: any) {
-    console.error("Error in /api/chat route:", error);
+    console.error("💥 Fejl i /api/chat route:", {
+      message: error.message,
+      details: error.stack,
+    });
+
     return NextResponse.json(
-      { error: error.message || "Unexpected error in chat route" },
+      { error: "Intern serverfejl – se logs for detaljer" },
       { status: 500 }
     );
   }
