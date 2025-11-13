@@ -299,8 +299,8 @@ export default function ChatPage() {
             <Image
               src="/Vahle-logo_cmyk_positiv.webp"
               alt="Vahle logo"
-              width={135}
-              height={135}
+              width={100}
+              height={100}
               style={{ objectFit: 'contain' }}
             />
 
