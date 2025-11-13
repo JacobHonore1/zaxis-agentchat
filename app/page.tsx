@@ -17,8 +17,6 @@ function FileSidebar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   async function refreshFiles() {
     try {
@@ -30,35 +28,6 @@ function FileSidebar() {
       setLastUpdated(new Date().toLocaleTimeString('da-DK'));
     } catch {
       setError('Fejl ved opdatering af filer');
-    }
-  }
-
-  async function handleFileUpload(e: ChangeEvent<HTMLInputElement>) {
-    try {
-      setUploadError(null);
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      setUploading(true);
-
-      const res = await fetch('/api/upload-file-to-drive', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        setUploadError('Upload fejlede');
-      } else {
-        await refreshFiles();
-      }
-    } catch {
-      setUploadError('Upload fejl');
-    } finally {
-      setUploading(false);
-      e.target.value = '';
     }
   }
 
@@ -128,32 +97,6 @@ function FileSidebar() {
           >
             Google Drive filer
           </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              const input = document.getElementById('fileUploadInput') as HTMLInputElement;
-              input.click();
-            }}
-            style={{
-              background: 'rgba(255,255,255,0.12)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 6,
-              width: 24,
-              height: 24,
-              fontSize: 16,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            +
-          </button>
-
-          <input id="fileUploadInput" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
         </div>
       </div>
 
@@ -209,8 +152,6 @@ function FileSidebar() {
       >
         <div>Filer i alt: {files.length}</div>
         <div>Senest hentet: {lastUpdated ?? 'henter'}</div>
-        {uploading && <div>Uploader fil</div>}
-        {uploadError && <div style={{ color: '#ffb3b3' }}>Upload fejl</div>}
       </div>
     </div>
   );
@@ -331,6 +272,8 @@ export default function ChatPage() {
           background: 'linear-gradient(180deg, #002b44, #004d66)',
         }}
       >
+
+        {/* HEADER UPDATED HERE */}
         <div
           style={{
             background: 'linear-gradient(135deg, #002b44, #4e9fe3)',
@@ -341,17 +284,40 @@ export default function ChatPage() {
             justifyContent: 'space-between',
           }}
         >
-          <h1 style={{ margin: 0, color: '#fff', fontSize: '1.3rem' }}>
-            Virtoo_internal_agent_demo
+          <h1
+            style={{
+              fontSize: '1.3rem',
+              fontWeight: 600,
+              color: '#ffffff',
+              margin: 0,
+            }}
+          >
+            Vahle Intern Assistent MVP
           </h1>
 
-          <Image
-            src="/VITROO logo_Black.png"
-            width={135}
-            height={135}
-            alt="logo"
-            style={{ objectFit: 'contain', filter: 'invert(1)' }}
-          />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+            }}
+          >
+            <Image
+              src="/vahle logo.png"
+              alt="Vahle logo"
+              width={135}
+              height={135}
+              style={{ objectFit: 'contain' }}
+            />
+
+            <Image
+              src="/VITROO logo_Black.png"
+              alt="Virtoo logo"
+              width={135}
+              height={135}
+              style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+            />
+          </div>
         </div>
 
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
