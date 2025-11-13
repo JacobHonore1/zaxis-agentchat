@@ -17,28 +17,67 @@ function FileSidebar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function refreshFiles() {
+    try {
+      const res = await fetch('/api/drive-test');
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const list = Array.isArray(data.files) ? data.files : data;
+      setFiles(list);
+      setLastUpdated(new Date().toLocaleTimeString('da-DK'));
+    } catch {
+      setError('Fejl ved opdatering af filer');
+    }
+  }
+
+  async function handleFileUpload(e: ChangeEvent<HTMLInputElement>) {
+    try {
+      setUploadError(null);
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      setUploading(true);
+
+      const res = await fetch('/api/upload-file-to-drive', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        setUploadError('Upload fejlede');
+      } else {
+        await refreshFiles();
+      }
+    } catch {
+      setUploadError('Upload fejl');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  }
 
   useEffect(() => {
     async function loadFiles() {
       try {
         setLoading(true);
-        setError(null);
-
         const res = await fetch('/api/drive-test');
-        if (!res.ok) throw new Error('Fejl ved hentning');
-
+        if (!res.ok) throw new Error();
         const data = await res.json();
         const list = Array.isArray(data.files) ? data.files : data;
-
         setFiles(list);
         setLastUpdated(new Date().toLocaleTimeString('da-DK'));
-      } catch (err) {
-        setError('Kunne ikke hente filer fra vidensbanken');
+      } catch {
+        setError('Kunne ikke hente filer');
       } finally {
         setLoading(false);
       }
     }
-
     loadFiles();
   }, []);
 
@@ -54,7 +93,6 @@ function FileSidebar() {
         boxSizing: 'border-box',
       }}
     >
-      {/* Header med plusknap */}
       <div
         style={{
           marginBottom: 10,
@@ -79,7 +117,6 @@ function FileSidebar() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 10,
           }}
         >
           <div
@@ -95,8 +132,8 @@ function FileSidebar() {
           <button
             type="button"
             onClick={() => {
-              const input = document.getElementById('fileUploadInput') as HTMLInputElement | null;
-              input?.click();
+              const input = document.getElementById('fileUploadInput') as HTMLInputElement;
+              input.click();
             }}
             style={{
               background: 'rgba(255,255,255,0.12)',
@@ -109,40 +146,31 @@ function FileSidebar() {
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
-              alignItems: 'center',
               justifyContent: 'center',
+              alignItems: 'center',
             }}
-            title="Tilføj fil til vidensbank"
           >
             +
           </button>
 
-          {/* Filvælger (Trin 1: kun log i console) */}
           <input
             id="fileUploadInput"
             type="file"
             style={{ display: 'none' }}
-            onChange={(e) => {
-              console.log('Valgt fil:', e.target.files?.[0]);
-            }}
+            onChange={handleFileUpload}
           />
         </div>
       </div>
 
-      {/* Filoversigt */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading && <div style={{ color: 'rgba(255,255,255,0.6)' }}>Indlæser filer</div>}
-
         {error && <div style={{ color: '#ffb3b3' }}>{error}</div>}
-
         {!loading && !error && files.length === 0 && (
-          <div style={{ color: 'rgba(255,255,255,0.6)' }}>
-            Ingen filer registreret i vidensbanken
-          </div>
+          <div style={{ color: 'rgba(255,255,255,0.6)' }}>Ingen filer registreret</div>
         )}
 
         {!loading && !error && files.length > 0 && (
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {files.map((file) => (
               <li key={file.id ?? file.name} style={{ padding: '6px 4px' }}>
                 <div
@@ -150,10 +178,9 @@ function FileSidebar() {
                     fontSize: '0.8rem',
                     color: '#ffffff',
                     whiteSpace: 'nowrap',
-                    textOverflow: 'ellipsis',
                     overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
-                  title={file.name}
                 >
                   {file.name}
                 </div>
@@ -176,18 +203,19 @@ function FileSidebar() {
         )}
       </div>
 
-      {/* Statusfelt */}
       <div
         style={{
           marginTop: 10,
           paddingTop: 8,
           borderTop: '1px solid rgba(255,255,255,0.08)',
-          color: 'rgba(255,255,255,0.5)',
           fontSize: '0.75rem',
+          color: 'rgba(255,255,255,0.5)',
         }}
       >
         <div>Filer i alt: {files.length}</div>
         <div>Senest hentet: {lastUpdated ?? 'henter'}</div>
+        {uploading && <div>Uploader fil</div>}
+        {uploadError && <div style={{ color: '#ffb3b3' }}>Upload fejl</div>}
       </div>
     </div>
   );
@@ -235,7 +263,9 @@ export default function ChatPage() {
           message: input,
         }),
       });
+
       const data = await res.json();
+
       if (data.reply) {
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       }
@@ -262,35 +292,15 @@ export default function ChatPage() {
       style={{
         height: '100vh',
         width: '100vw',
-        overflow: 'hidden',
         margin: 0,
         padding: 0,
+        overflow: 'hidden',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         background: '#002233',
-        fontFamily: 'Inter, sans-serif',
       }}
     >
-      <style jsx global>{`
-        html,
-        body {
-          margin: 0;
-          padding: 0;
-          overflow: hidden;
-          background-color: #002233;
-        }
-        .chat-scroll::-webkit-scrollbar {
-          width: 6px;
-        }
-        .chat-scroll::-webkit-scrollbar-thumb {
-          background-color: #002233;
-        }
-        .chat-scroll::-webkit-scrollbar-thumb:hover {
-          background-color: #003355;
-        }
-      `}</style>
-
       <div
         style={{
           width: '100%',
@@ -298,13 +308,12 @@ export default function ChatPage() {
           height: '92vh',
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
           borderRadius: 20,
           boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-          overflow: 'hidden',
           background: 'linear-gradient(180deg, #002b44, #004d66)',
         }}
       >
-        {/* Header */}
         <div
           style={{
             background: 'linear-gradient(135deg, #002b44, #4e9fe3)',
@@ -315,18 +324,19 @@ export default function ChatPage() {
             justifyContent: 'space-between',
           }}
         >
-          <h1 style={{ color: '#ffffff', fontSize: '1.3rem', margin: 0 }}>Virtoo_internal_agent_demo</h1>
+          <h1 style={{ margin: 0, color: '#fff', fontSize: '1.3rem' }}>
+            Virtoo_internal_agent_demo
+          </h1>
 
           <Image
             src="/VITROO logo_Black.png"
-            alt="Virtoo logo"
             width={135}
             height={135}
-            style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+            alt="logo"
+            style={{ objectFit: 'contain', filter: 'invert(1)' }}
           />
         </div>
 
-        {/* Midtersektion: sidebar + chat */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
           <FileSidebar />
 
@@ -334,19 +344,19 @@ export default function ChatPage() {
             className="chat-scroll"
             style={{
               flex: 1,
-              padding: '20px',
+              padding: 20,
               overflowY: 'auto',
               background: 'linear-gradient(to bottom, #003355, #00475c)',
               color: 'white',
             }}
           >
             {messages.length === 0 ? (
-              <p style={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 60 }}>
+              <p style={{ marginTop: 60, textAlign: 'center', color: 'rgba(255,255,255,0.7)' }}>
                 Start en samtale for at komme i gang
               </p>
             ) : (
-              messages.map((msg, i) => (
-                <div key={i} style={{ marginBottom: 12 }}>
+              messages.map((msg, idx) => (
+                <div key={idx} style={{ marginBottom: 12 }}>
                   <div
                     style={{
                       fontWeight: 600,
@@ -356,7 +366,6 @@ export default function ChatPage() {
                   >
                     {msg.role === 'user' ? 'Bruger' : 'Assistent'}
                   </div>
-
                   <div
                     style={{
                       display: 'inline-block',
@@ -381,10 +390,41 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <div
           style={{
             borderTop: '1px solid rgba(255,255,255,0.1)',
-            background: '#003355',
             padding: '12px',
-            displa
+            background: '#003355',
+            display: 'flex',
+            gap: 8,
+          }}
+        >
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Spørg mig"
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              borderRadius: 12,
+            }}
+          />
+
+          <button
+            onClick={sendMessage}
+            disabled={loading}
+            style={{ padding: '10px 14px', borderRadius: 12 }}
+          >
+            {loading ? '...' : 'Send'}
+          </button>
+
+          <button onClick={resetConversation} style={{ borderRadius: 12 }}>
+            🔄
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
