@@ -90,7 +90,6 @@ function FileSidebar() {
         display: 'flex',
         flexDirection: 'column',
         padding: '12px 10px',
-        boxSizing: 'border-box',
         overflow: 'hidden',
       }}
     >
@@ -307,7 +306,7 @@ export default function ChatPage() {
       <div
         style={{
           width: '100percent',
-          maxWidth: 800,
+          maxWidth: 1200,
           height: '92vh',
           display: 'flex',
           flexDirection: 'column',
