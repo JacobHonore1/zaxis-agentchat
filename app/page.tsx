@@ -5,7 +5,6 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { v4 as uuidv4 } from 'uuid';
 
-// Type til filer fra /api/drive-test
 type DriveFile = {
   id?: string;
   name: string;
@@ -13,11 +12,11 @@ type DriveFile = {
   modifiedTime?: string;
 };
 
-// Simpel sidebar der henter filer fra /api/drive-test
 function FileSidebar() {
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadFiles() {
@@ -34,8 +33,8 @@ function FileSidebar() {
         const list = Array.isArray(data.files) ? data.files : Array.isArray(data) ? data : [];
 
         setFiles(list);
+        setLastUpdated(new Date().toLocaleTimeString('da-DK'));
       } catch (err) {
-        console.error('Fejl ved hentning af filer', err);
         setError('Kunne ikke hente filer fra vidensbanken');
       } finally {
         setLoading(false);
@@ -140,8 +139,6 @@ function FileSidebar() {
                   padding: '6px 4px',
                   marginBottom: 2,
                   borderRadius: 6,
-                  cursor: 'default',
-                  transition: 'background 0.15s ease',
                 }}
               >
                 <div
@@ -169,7 +166,7 @@ function FileSidebar() {
                   <span>
                     {file.mimeType
                       ? file.mimeType.split('/')[1] ?? file.mimeType
-                      : 'ukendt type'}
+                      : 'type ukendt'}
                   </span>
                   {file.modifiedTime && (
                     <span>
@@ -181,6 +178,19 @@ function FileSidebar() {
             ))}
           </ul>
         )}
+      </div>
+
+      <div
+        style={{
+          marginTop: 10,
+          paddingTop: 8,
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          fontSize: '0.75rem',
+          color: 'rgba(255,255,255,0.5)',
+        }}
+      >
+        <div>Filer i alt: {files.length}</div>
+        <div>Senest hentet: {lastUpdated ?? 'henter'}</div>
       </div>
     </div>
   );
@@ -213,6 +223,7 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
+
     const userMessage = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
@@ -233,7 +244,7 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, botMessage]);
       }
     } catch (err) {
-      console.error('🚨 Fejl ved afsendelse:', err);
+      console.error('Fejl ved afsendelse', err);
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: 'Der opstod en fejl ved forbindelsen.' },
@@ -302,7 +313,6 @@ export default function ChatPage() {
           background: 'linear-gradient(180deg, #002b44 0%, #004d66 100%)',
         }}
       >
-        {/* Header */}
         <div
           style={{
             background: 'linear-gradient(135deg, #002b44 0%, #4e9fe3 100%)',
@@ -333,7 +343,6 @@ export default function ChatPage() {
           />
         </div>
 
-        {/* Midtersektion med sidebar og chat i to kolonner */}
         <div
           style={{
             flex: 1,
@@ -341,10 +350,8 @@ export default function ChatPage() {
             minHeight: 0,
           }}
         >
-          {/* Ny sidebar til venstre */}
           <FileSidebar />
 
-          {/* Chatvindue til højre, uændret styling */}
           <div
             className="chat-scroll"
             style={{
@@ -364,7 +371,7 @@ export default function ChatPage() {
                   fontSize: '1.1rem',
                 }}
               >
-                Start en samtale for at komme i gang.
+                Start en samtale for at komme i gang
               </p>
             ) : (
               messages.map((msg, i) => (
@@ -432,8 +439,8 @@ export default function ChatPage() {
                 .dot-flashing::before { left: -10px; animation: dot-flashing 1s infinite alternate; }
                 .dot-flashing::after { left: 10px; animation: dot-flashing 1s infinite alternate; }
                 @keyframes dot-flashing {
-                  0% { opacity: 0.2; }
-                  50%, 100% { opacity: 1; }
+                  0percent { opacity: 0.2; }
+                  50percent, 100percent { opacity: 1; }
                 }
               `}
                 </style>
@@ -443,7 +450,6 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <div
           style={{
             borderTop: '1px solid rgba(255,255,255,0.1)',
