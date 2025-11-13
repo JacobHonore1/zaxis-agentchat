@@ -296,8 +296,8 @@ export default function ChatPage() {
         body {
           margin: 0;
           padding: 0;
-          height: 100percent;
-          width: 100percent;
+          height: 100%;
+          width: 100%;
           overflow: hidden;
           background-color: #002233;
         }
@@ -305,7 +305,7 @@ export default function ChatPage() {
 
       <div
         style={{
-          width: '100percent',
+          width: '100%',
           maxWidth: 1200,
           height: '92vh',
           display: 'flex',
