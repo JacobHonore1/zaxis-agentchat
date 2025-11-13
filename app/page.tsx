@@ -1,232 +1,319 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState('');
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    let conversationId = localStorage.getItem('conversation_id');
-    if (!conversationId) {
-      conversationId = uuidv4();
-      localStorage.setItem('conversation_id', conversationId);
-    }
+    inputRef.current?.focus();
+  }, [loading]);
 
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    document.body.style.background = '#002233';
-    document.body.style.overflow = 'hidden';
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  useEffect(() => {
+    let storedId = localStorage.getItem('conversation_id');
+    if (!storedId) {
+      storedId = uuidv4();
+      localStorage.setItem('conversation_id', storedId);
+    }
+    setConversationId(storedId);
   }, []);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
-    const conversationId = localStorage.getItem('conversation_id');
+    if (!input.trim() || loading) return;
     const userMessage = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        conversation_id: conversationId,
-        message: input,
-      }),
-    });
-
-    const data = await response.json();
-    const botMessage = { role: 'assistant', content: data.reply };
-    setMessages((prev) => [...prev, botMessage]);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          message: input,
+        }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        const botMessage = { role: 'assistant', content: data.reply };
+        setMessages((prev) => [...prev, botMessage]);
+      }
+    } catch (err) {
+      console.error('🚨 Fejl ved afsendelse:', err);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Der opstod en fejl ved forbindelsen.' },
+      ]);
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
+    }
   };
 
-  const resetChat = () => {
+  const resetConversation = () => {
     localStorage.removeItem('conversation_id');
+    setConversationId(null);
     setMessages([]);
+    inputRef.current?.focus();
   };
 
   return (
     <div
       style={{
-        width: '100vw',
         height: '100vh',
-        color: 'white',
+        width: '100vw',
+        overflow: 'hidden',
+        margin: 0,
+        padding: 0,
         display: 'flex',
-        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: '#002233',
         fontFamily: 'Inter, sans-serif',
-        background: 'linear-gradient(to bottom, #00334d, #001a26)',
       }}
     >
-      {/* Topbjælke */}
+      <style jsx global>{`
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          background-color: #002233;
+        }
+        .chat-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+          background-color: #002233;
+          border-radius: 10px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+          background-color: #003355;
+        }
+      `}</style>
+
       <div
         style={{
-          background: 'linear-gradient(to bottom, #004466, #002233)',
-          padding: '18px 40px',
+          width: '100%',
+          maxWidth: 800,
+          height: '92vh',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          flexShrink: 0,
+          flexDirection: 'column',
+          borderRadius: 20,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+          overflow: 'hidden',
+          background: 'linear-gradient(180deg, #002b44 0%, #004d66 100%)',
         }}
       >
-        <h1 style={{ margin: 0, fontWeight: 600, fontSize: 20 }}>Virtoo_internal_agent_demo</h1>
-        <img
-          src="/VITROO logo_Black.png"
-          alt="Virtoo Logo"
-          style={{ height: 75, objectFit: 'contain' }}
-        />
-      </div>
-
-      {/* Chatindhold */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '24px 60px',
-          background: 'linear-gradient(to top, #002a3d, #003b59)',
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#002233 #001a26',
-        }}
-      >
-        <style jsx global>{`
-          ::-webkit-scrollbar {
-            width: 6px;
-          }
-          ::-webkit-scrollbar-track {
-            background: #001a26;
-          }
-          ::-webkit-scrollbar-thumb {
-            background-color: #002233;
-            border-radius: 3px;
-          }
-
-          @keyframes blink {
-            0%,
-            80%,
-            100% {
-              opacity: 0;
-            }
-            40% {
-              opacity: 1;
-            }
-          }
-
-          .dots::after {
-            content: '…';
-            animation: blink 1.2s infinite;
-          }
-        `}</style>
-
-        {messages.map((msg, i) => (
-          <div
-            key={i}
+        {/* Header */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #002b44 0%, #4e9fe3 100%)',
+            padding: '18px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <h1
             style={{
-              marginBottom: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
+              fontSize: '1.3rem',
+              fontWeight: 600,
+              color: '#ffffff',
+              margin: 0,
             }}
           >
-            <strong
-              style={{
-                color: msg.role === 'user' ? '#5bc0de' : '#9fe2bf',
-                marginBottom: 4,
-              }}
-            >
-              {msg.role === 'user' ? 'Bruger' : 'Assistent'}
-            </strong>
-            <div
-              style={{
-                backgroundColor: msg.role === 'user' ? '#004466' : '#002a3d',
-                borderRadius: 12,
-                padding: '14px 18px',
-                lineHeight: 1.6,
-                fontSize: '15px',
-                maxWidth: '75%',
-                color: 'white',
-              }}
-            >
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
-            </div>
-          </div>
-        ))}
+            Virtoo_internal_agent_demo
+          </h1>
 
-        {loading && (
-          <div
-            style={{
-              color: '#9fe2bf',
-              fontStyle: 'italic',
-              marginTop: 10,
-              marginLeft: 4,
-            }}
-          >
-            Assistent skriver<span className="dots"></span>
-          </div>
-        )}
-      </div>
+          <Image
+            src="/VITROO logo_Black.png"
+            alt="Virtoo logo"
+            width={135}
+            height={135}
+            style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+          />
+        </div>
 
-      {/* Inputfelt */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          padding: '18px 60px 30px 60px',
-          backgroundColor: '#002233',
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          flexShrink: 0,
-        }}
-      >
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Spørg mig..."
-          autoFocus
+        {/* Chatvindue */}
+        <div
+          className="chat-scroll"
           style={{
             flex: 1,
-            padding: 14,
-            borderRadius: 8,
-            border: '1px solid #004466',
-            backgroundColor: '#00334d',
-            color: 'white',
-            fontWeight: 'bold',
-            outline: 'none',
-          }}
-        />
-        <button
-          onClick={sendMessage}
-          style={{
-            backgroundColor: '#0070f3',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            padding: '14px 24px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
+            padding: '20px',
+            overflowY: 'auto',
+            background: 'linear-gradient(to bottom, #003355 0%, #00475c 100%)',
+            color: '#ffffff',
           }}
         >
-          Send
-        </button>
-        <button
-          onClick={resetChat}
+          {messages.length === 0 ? (
+            <p
+              style={{
+                color: 'rgba(255,255,255,0.7)',
+                textAlign: 'center',
+                marginTop: 60,
+                fontSize: '1.1rem',
+              }}
+            >
+              Start en samtale for at komme i gang.
+            </p>
+          ) : (
+            messages.map((msg, i) => (
+              <div
+                key={i}
+                style={{
+                  textAlign: 'left',
+                  marginBottom: 12,
+                }}
+              >
+                <div
+                  style={{
+                    color: msg.role === 'user' ? '#5bc0de' : '#9fe2bf',
+                    fontWeight: 600,
+                    marginBottom: 6,
+                  }}
+                >
+                  {msg.role === 'user' ? 'Bruger' : 'Assistent'}
+                </div>
+                <div
+                  style={{
+                    display: 'inline-block',
+                    padding: '12px 16px',
+                    borderRadius: 16,
+                    background:
+                      msg.role === 'user'
+                        ? 'rgba(255, 255, 255, 0.15)'
+                        : 'rgba(0, 0, 0, 0.25)',
+                    color: msg.role === 'user' ? '#fff' : '#e6f3ff',
+                    maxWidth: '80%',
+                    wordBreak: 'break-word',
+                    textAlign: 'left',
+                    lineHeight: '1.6',
+                    fontSize: '1rem',
+                  }}
+                >
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              </div>
+            ))
+          )}
+
+          {loading && (
+            <div style={{ textAlign: 'left', margin: '10px 0 0 10px' }}>
+              <div className="dot-flashing" />
+              <style>
+                {`
+                .dot-flashing {
+                  position: relative;
+                  width: 6px;
+                  height: 6px;
+                  border-radius: 50%;
+                  background-color: #ffffff;
+                  animation: dot-flashing 1s infinite linear alternate;
+                }
+                .dot-flashing::before, .dot-flashing::after {
+                  content: '';
+                  position: absolute;
+                  top: 0;
+                  width: 6px;
+                  height: 6px;
+                  border-radius: 50%;
+                  background-color: #ffffff;
+                }
+                .dot-flashing::before { left: -10px; animation: dot-flashing 1s infinite alternate; }
+                .dot-flashing::after { left: 10px; animation: dot-flashing 1s infinite alternate; }
+                @keyframes dot-flashing {
+                  0% { opacity: 0.2; }
+                  50%, 100% { opacity: 1; }
+                }
+              `}
+              </style>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Footer */}
+        <div
           style={{
-            backgroundColor: '#0070f3',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            padding: '14px 24px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+            background: '#003355',
+            padding: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}
         >
-          Nulstil
-        </button>
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Spørg mig"
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              borderRadius: 12,
+              border: 'none',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              color: '#002233',
+              background: '#ffffff',
+            }}
+            disabled={loading}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={loading}
+            style={{
+              background: loading
+                ? 'linear-gradient(135deg, #999, #aaa)'
+                : 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 12,
+              padding: '10px 16px',
+              fontWeight: 600,
+              cursor: loading ? 'default' : 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            {loading ? '...' : 'Send'}
+          </button>
+          <button
+            onClick={resetConversation}
+            title="Nulstil samtale"
+            style={{
+              background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 12,
+              padding: '10px 14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            🔄
+          </button>
+        </div>
       </div>
     </div>
   );
