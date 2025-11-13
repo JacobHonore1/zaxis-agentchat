@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, ChangeEvent } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { v4 as uuidv4 } from 'uuid';
@@ -273,7 +273,7 @@ export default function ChatPage() {
         }}
       >
 
-        {/* HEADER UPDATED HERE */}
+        {/* HEADER WITH VAHLE LOGO */}
         <div
           style={{
             background: 'linear-gradient(135deg, #002b44, #4e9fe3)',
@@ -295,15 +295,9 @@ export default function ChatPage() {
             Vahle Intern Assistent MVP
           </h1>
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-            }}
-          >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Image
-              src="/vahle logo.png"
+              src="/vahle_logo.png"
               alt="Vahle logo"
               width={135}
               height={135}
@@ -335,7 +329,7 @@ export default function ChatPage() {
           >
             {messages.length === 0 ? (
               <p style={{ marginTop: 60, textAlign: 'center', color: 'rgba(255,255,255,0.7)' }}>
-                Start en samtale for at komme i gang
+                Start en samtale for at komme i gang.
               </p>
             ) : (
               messages.map((msg, idx) => (
@@ -359,6 +353,7 @@ export default function ChatPage() {
                           ? 'rgba(255,255,255,0.15)'
                           : 'rgba(0,0,0,0.25)',
                       maxWidth: '80%',
+                      wordBreak: 'break-word',
                     }}
                   >
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
