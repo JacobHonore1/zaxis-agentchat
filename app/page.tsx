@@ -5,10 +5,6 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { v4 as uuidv4 } from 'uuid';
 
-/* --------------------------------------
-   SIDEBAR (UÆNDRET VISUELT)
--------------------------------------- */
-
 type DriveFile = {
   id?: string;
   name: string;
@@ -59,8 +55,7 @@ function FileSidebar() {
       style={{
         width: '240px',
         borderRight: '1px solid rgba(255,255,255,0.12)',
-        background:
-          'linear-gradient(180deg, rgba(0,34,51,0.95), rgba(0,71,92,0.95))',
+        background: 'linear-gradient(180deg, rgba(0,34,51,0.95), rgba(0,71,92,0.95))',
         display: 'flex',
         flexDirection: 'column',
         padding: '12px 10px',
@@ -88,32 +83,20 @@ function FileSidebar() {
 
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            color: '#ffffff',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              color: '#ffffff',
-            }}
-          >
-            Google Drive filer
-          </div>
+          Google Drive filer
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading && (
-          <div style={{ color: 'rgba(255,255,255,0.6)' }}>Indlæser filer</div>
-        )}
+        {loading && <div style={{ color: 'rgba(255,255,255,0.6)' }}>Indlæser filer</div>}
         {error && <div style={{ color: '#ffb3b3' }}>{error}</div>}
         {!loading && !error && files.length === 0 && (
-          <div style={{ color: 'rgba(255,255,255,0.6)' }}>
-            Ingen filer registreret
-          </div>
+          <div style={{ color: 'rgba(255,255,255,0.6)' }}>Ingen filer registreret</div>
         )}
 
         {!loading && !error && files.length > 0 && (
@@ -141,9 +124,7 @@ function FileSidebar() {
                 >
                   <span>{file.mimeType?.split('/')[1] ?? 'ukendt'}</span>
                   {file.modifiedTime && (
-                    <span>
-                      {new Date(file.modifiedTime).toLocaleDateString('da-DK')}
-                    </span>
+                    <span>{new Date(file.modifiedTime).toLocaleDateString('da-DK')}</span>
                   )}
                 </div>
               </li>
@@ -168,30 +149,22 @@ function FileSidebar() {
   );
 }
 
-/* --------------------------------------
-   CHAT
--------------------------------------- */
-
 export default function ChatPage() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
   const inputRef = useRef<HTMLInputElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  /* Auto-focus */
   useEffect(() => {
     inputRef.current?.focus();
   }, [loading]);
 
-  /* Auto-scroll */
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  /* Persistent conversation */
   useEffect(() => {
     let storedId = localStorage.getItem('conversation_id');
     if (!storedId) {
@@ -201,7 +174,6 @@ export default function ChatPage() {
     setConversationId(storedId);
   }, []);
 
-  /* Send message */
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -219,10 +191,7 @@ export default function ChatPage() {
 
       const data = await res.json();
       if (data.reply) {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: data.reply },
-        ]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       }
     } catch {
       setMessages((prev) => [
@@ -256,7 +225,6 @@ export default function ChatPage() {
         alignItems: 'center',
       }}
     >
-      {/* GLOBAL STYLES, SCROLLBAR + DANSENDE PRIKKER */}
       <style jsx global>{`
         html,
         body {
@@ -271,42 +239,24 @@ export default function ChatPage() {
         .chat-scroll::-webkit-scrollbar {
           width: 6px;
         }
+        .chat-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
         .chat-scroll::-webkit-scrollbar-thumb {
           background-color: #002233;
           border-radius: 10px;
         }
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+          background-color: #003355;
+        }
 
-        @keyframes dotflashing {
-          0% {
-            opacity: 0.2;
-          }
-          50% {
-            opacity: 1;
-          }
-          100% {
-            opacity: 0.2;
-          }
-        }
-        .thinking-dots {
-          display: flex;
-          gap: 4px;
-        }
-        .thinking-dots div {
-          width: 6px;
-          height: 6px;
-          background: white;
-          border-radius: 50%;
-          animation: dotflashing 1.2s infinite;
-        }
-        .thinking-dots div:nth-child(2) {
-          animation-delay: 0.2s;
-        }
-        .thinking-dots div:nth-child(3) {
-          animation-delay: 0.4s;
+        @keyframes dots {
+          0% { opacity: 0.2; }
+          50% { opacity: 1; }
+          100% { opacity: 0.2; }
         }
       `}</style>
 
-      {/* MAIN WRAPPER */}
       <div
         style={{
           width: '100%',
@@ -320,7 +270,7 @@ export default function ChatPage() {
           background: 'linear-gradient(180deg, #002b44, #004d66)',
         }}
       >
-        {/* HEADER */}
+        {/* Header */}
         <div
           style={{
             background: 'linear-gradient(135deg, #002b44, #4e9fe3)',
@@ -333,9 +283,9 @@ export default function ChatPage() {
         >
           <h1
             style={{
-              fontSize: '1.3rem',
+              fontSize: '1.25rem',
               fontWeight: 600,
-              color: '#ffffff',
+              color: 'white',
               margin: 0,
             }}
           >
@@ -345,20 +295,15 @@ export default function ChatPage() {
           <Image
             src="/VITROO logo_Black.png"
             alt="Virtoo logo"
-            width={135}
-            height={135}
-            style={{
-              objectFit: 'contain',
-              filter: 'brightness(0) invert(1)',
-            }}
+            width={120}
+            height={120}
+            style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
           />
         </div>
 
-        {/* CONTENT AREA: SIDEBAR + CHAT */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
           <FileSidebar />
 
-          {/* CHAT */}
           <div
             className="chat-scroll"
             style={{
@@ -370,22 +315,16 @@ export default function ChatPage() {
             }}
           >
             {messages.length === 0 ? (
-              <p
-                style={{
-                  marginTop: 60,
-                  textAlign: 'center',
-                  color: 'rgba(255,255,255,0.7)',
-                }}
-              >
+              <p style={{ marginTop: 60, textAlign: 'center', color: 'rgba(255,255,255,0.7)' }}>
                 Start en samtale for at komme i gang.
               </p>
             ) : (
               messages.map((msg, idx) => (
-                <div key={idx} style={{ marginBottom: 12 }}>
+                <div key={idx} style={{ marginBottom: 6 }}>
                   <div
                     style={{
                       fontWeight: 600,
-                      marginBottom: 6,
+                      marginBottom: 4,
                       color: msg.role === 'user' ? '#5bc0de' : '#9fe2bf',
                     }}
                   >
@@ -394,8 +333,8 @@ export default function ChatPage() {
                   <div
                     style={{
                       display: 'inline-block',
-                      padding: '12px 16px',
-                      borderRadius: 16,
+                      padding: '6px 10px',
+                      borderRadius: 12,
                       background:
                         msg.role === 'user'
                           ? 'rgba(255,255,255,0.15)'
@@ -411,21 +350,11 @@ export default function ChatPage() {
             )}
 
             {loading && (
-              <div
-                style={{
-                  marginTop: 10,
-                  marginLeft: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                <div className="thinking-dots">
-                  <div></div>
-                  <div></div>
-                  <div></div>
-                </div>
-                <span style={{ opacity: 0.7 }}>Tænker…</span>
+              <div style={{ marginTop: 10, color: 'white', display: 'flex', gap: 6 }}>
+                Assistenten tænker
+                <span style={{ animation: 'dots 1s infinite 0ms' }}>.</span>
+                <span style={{ animation: 'dots 1s infinite 200ms' }}>.</span>
+                <span style={{ animation: 'dots 1s infinite 400ms' }}>.</span>
               </div>
             )}
 
@@ -433,7 +362,7 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* FOOTER */}
+        {/* Footer input */}
         <div
           style={{
             borderTop: '1px solid rgba(255,255,255,0.1)',
@@ -441,8 +370,26 @@ export default function ChatPage() {
             background: '#003355',
             display: 'flex',
             gap: 8,
+            alignItems: 'center',
           }}
         >
+          {/* Upload button */}
+          <button
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: 'rgba(255,255,255,0.15)',
+              color: 'white',
+              border: 'none',
+              fontSize: 22,
+              cursor: 'pointer',
+            }}
+          >
+            +
+          </button>
+
+          {/* Main text input */}
           <input
             ref={inputRef}
             value={input}
@@ -457,7 +404,7 @@ export default function ChatPage() {
             }}
           />
 
-          {/* SEND-KNAP MED INTERAKTIV STATE */}
+          {/* Send button */}
           <button
             onClick={sendMessage}
             disabled={loading || !input.trim()}
@@ -477,6 +424,7 @@ export default function ChatPage() {
             Send
           </button>
 
+          {/* Reset */}
           <button
             onClick={resetConversation}
             style={{
