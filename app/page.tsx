@@ -243,6 +243,7 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
+
     const userMessage = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
@@ -300,6 +301,20 @@ export default function ChatPage() {
           width: 100%;
           overflow: hidden;
           background-color: #002233;
+        }
+
+        .chat-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+          background-color: #002233;
+          border-radius: 10px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+          background-color: #003355;
         }
       `}</style>
 
