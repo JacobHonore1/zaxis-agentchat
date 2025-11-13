@@ -125,7 +125,7 @@ export default function ChatPage() {
         <div
           style={{
             background: 'linear-gradient(135deg, #002b44 0%, #4e9fe3 100%)',
-            padding: '0px 24px',
+            padding: '8px 24px',
             height: '50px',
             display: 'flex',
             alignItems: 'center',
