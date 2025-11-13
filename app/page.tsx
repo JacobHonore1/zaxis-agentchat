@@ -5,6 +5,187 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { v4 as uuidv4 } from 'uuid';
 
+// Type til filer fra /api/drive-test
+type DriveFile = {
+  id?: string;
+  name: string;
+  mimeType?: string;
+  modifiedTime?: string;
+};
+
+// Simpel sidebar der henter filer fra /api/drive-test
+function FileSidebar() {
+  const [files, setFiles] = useState<DriveFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadFiles() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch('/api/drive-test');
+        if (!res.ok) {
+          throw new Error('Svar fra server var ikke ok');
+        }
+
+        const data = await res.json();
+        const list = Array.isArray(data.files) ? data.files : Array.isArray(data) ? data : [];
+
+        setFiles(list);
+      } catch (err) {
+        console.error('Fejl ved hentning af filer', err);
+        setError('Kunne ikke hente filer fra vidensbanken');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadFiles();
+  }, []);
+
+  return (
+    <div
+      style={{
+        width: '240px',
+        borderRight: '1px solid rgba(255,255,255,0.12)',
+        background: 'linear-gradient(180deg, rgba(0, 34, 51, 0.95) 0%, rgba(0, 71, 92, 0.95) 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '12px 10px',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          marginBottom: 10,
+          paddingBottom: 8,
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '0.7rem',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.5)',
+            marginBottom: 4,
+          }}
+        >
+          Vidensbank
+        </div>
+        <div
+          style={{
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            color: '#ffffff',
+          }}
+        >
+          Google Drive filer
+        </div>
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+        }}
+      >
+        {loading && (
+          <div
+            style={{
+              fontSize: '0.8rem',
+              color: 'rgba(255,255,255,0.6)',
+            }}
+          >
+            Indlæser filer
+          </div>
+        )}
+
+        {error && !loading && (
+          <div
+            style={{
+              fontSize: '0.8rem',
+              color: '#ffb3b3',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && files.length === 0 && (
+          <div
+            style={{
+              fontSize: '0.8rem',
+              color: 'rgba(255,255,255,0.6)',
+            }}
+          >
+            Ingen filer registreret i vidensbanken
+          </div>
+        )}
+
+        {!loading && !error && files.length > 0 && (
+          <ul
+            style={{
+              listStyle: 'none',
+              margin: 0,
+              padding: 0,
+            }}
+          >
+            {files.map((file) => (
+              <li
+                key={file.id ?? file.name}
+                style={{
+                  padding: '6px 4px',
+                  marginBottom: 2,
+                  borderRadius: 6,
+                  cursor: 'default',
+                  transition: 'background 0.15s ease',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.8rem',
+                    color: '#ffffff',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    marginBottom: 2,
+                  }}
+                  title={file.name}
+                >
+                  {file.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.7rem',
+                    color: 'rgba(255,255,255,0.55)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: 6,
+                  }}
+                >
+                  <span>
+                    {file.mimeType
+                      ? file.mimeType.split('/')[1] ?? file.mimeType
+                      : 'ukendt type'}
+                  </span>
+                  {file.modifiedTime && (
+                    <span>
+                      {new Date(file.modifiedTime).toLocaleDateString('da-DK')}
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState('');
@@ -152,74 +333,85 @@ export default function ChatPage() {
           />
         </div>
 
-        {/* Chatvindue */}
+        {/* Midtersektion med sidebar og chat i to kolonner */}
         <div
-          className="chat-scroll"
           style={{
             flex: 1,
-            padding: '20px',
-            overflowY: 'auto',
-            background: 'linear-gradient(to bottom, #003355 0%, #00475c 100%)',
-            color: '#ffffff',
+            display: 'flex',
+            minHeight: 0,
           }}
         >
-          {messages.length === 0 ? (
-            <p
-              style={{
-                color: 'rgba(255,255,255,0.7)',
-                textAlign: 'center',
-                marginTop: 60,
-                fontSize: '1.1rem',
-              }}
-            >
-              Start en samtale for at komme i gang.
-            </p>
-          ) : (
-            messages.map((msg, i) => (
-              <div
-                key={i}
+          {/* Ny sidebar til venstre */}
+          <FileSidebar />
+
+          {/* Chatvindue til højre, uændret styling */}
+          <div
+            className="chat-scroll"
+            style={{
+              flex: 1,
+              padding: '20px',
+              overflowY: 'auto',
+              background: 'linear-gradient(to bottom, #003355 0%, #00475c 100%)',
+              color: '#ffffff',
+            }}
+          >
+            {messages.length === 0 ? (
+              <p
                 style={{
-                  textAlign: 'left',
-                  marginBottom: 12,
+                  color: 'rgba(255,255,255,0.7)',
+                  textAlign: 'center',
+                  marginTop: 60,
+                  fontSize: '1.1rem',
                 }}
               >
+                Start en samtale for at komme i gang.
+              </p>
+            ) : (
+              messages.map((msg, i) => (
                 <div
+                  key={i}
                   style={{
-                    color: msg.role === 'user' ? '#5bc0de' : '#9fe2bf',
-                    fontWeight: 600,
-                    marginBottom: 6,
-                  }}
-                >
-                  {msg.role === 'user' ? 'Bruger' : 'Assistent'}
-                </div>
-                <div
-                  style={{
-                    display: 'inline-block',
-                    padding: '12px 16px',
-                    borderRadius: 16,
-                    background:
-                      msg.role === 'user'
-                        ? 'rgba(255, 255, 255, 0.15)'
-                        : 'rgba(0, 0, 0, 0.25)',
-                    color: msg.role === 'user' ? '#fff' : '#e6f3ff',
-                    maxWidth: '80%',
-                    wordBreak: 'break-word',
                     textAlign: 'left',
-                    lineHeight: '1.6',
-                    fontSize: '1rem',
+                    marginBottom: 12,
                   }}
                 >
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <div
+                    style={{
+                      color: msg.role === 'user' ? '#5bc0de' : '#9fe2bf',
+                      fontWeight: 600,
+                      marginBottom: 6,
+                    }}
+                  >
+                    {msg.role === 'user' ? 'Bruger' : 'Assistent'}
+                  </div>
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      padding: '12px 16px',
+                      borderRadius: 16,
+                      background:
+                        msg.role === 'user'
+                          ? 'rgba(255, 255, 255, 0.15)'
+                          : 'rgba(0, 0, 0, 0.25)',
+                      color: msg.role === 'user' ? '#fff' : '#e6f3ff',
+                      maxWidth: '80%',
+                      wordBreak: 'break-word',
+                      textAlign: 'left',
+                      lineHeight: '1.6',
+                      fontSize: '1rem',
+                    }}
+                  >
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
 
-          {loading && (
-            <div style={{ textAlign: 'left', margin: '10px 0 0 10px' }}>
-              <div className="dot-flashing" />
-              <style>
-                {`
+            {loading && (
+              <div style={{ textAlign: 'left', margin: '10px 0 0 10px' }}>
+                <div className="dot-flashing" />
+                <style>
+                  {`
                 .dot-flashing {
                   position: relative;
                   width: 6px;
@@ -244,10 +436,11 @@ export default function ChatPage() {
                   50%, 100% { opacity: 1; }
                 }
               `}
-              </style>
-            </div>
-          )}
-          <div ref={chatEndRef} />
+                </style>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
         </div>
 
         {/* Footer */}
