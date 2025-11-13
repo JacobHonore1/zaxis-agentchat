@@ -91,6 +91,7 @@ function FileSidebar() {
         flexDirection: 'column',
         padding: '12px 10px',
         boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
     >
       <div
@@ -153,12 +154,7 @@ function FileSidebar() {
             +
           </button>
 
-          <input
-            id="fileUploadInput"
-            type="file"
-            style={{ display: 'none' }}
-            onChange={handleFileUpload}
-          />
+          <input id="fileUploadInput" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
         </div>
       </div>
 
@@ -248,7 +244,6 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
-
     const userMessage = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
@@ -258,14 +253,10 @@ export default function ChatPage() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          message: input,
-        }),
+        body: JSON.stringify({ conversation_id: conversationId, message: input }),
       });
 
       const data = await res.json();
-
       if (data.reply) {
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       }
@@ -290,20 +281,32 @@ export default function ChatPage() {
   return (
     <div
       style={{
-        height: '100vh',
-        width: '100vw',
         margin: 0,
         padding: 0,
+        height: '100vh',
+        width: '100vw',
         overflow: 'hidden',
+        background: '#002233',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        background: '#002233',
       }}
     >
+      <style jsx global>{`
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          height: 100percent;
+          width: 100percent;
+          overflow: hidden;
+          background-color: #002233;
+        }
+      `}</style>
+
       <div
         style={{
-          width: '100%',
+          width: '100percent',
           maxWidth: 800,
           height: '92vh',
           display: 'flex',
@@ -415,7 +418,10 @@ export default function ChatPage() {
           <button
             onClick={sendMessage}
             disabled={loading}
-            style={{ padding: '10px 14px', borderRadius: 12 }}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 12,
+            }}
           >
             {loading ? '...' : 'Send'}
           </button>
