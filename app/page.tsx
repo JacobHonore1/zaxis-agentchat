@@ -297,7 +297,7 @@ export default function ChatPage() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Image
-              src="/vahle_logo.png"
+              src="/Vahle-logo_cmyk_positiv.webp"
               alt="Vahle logo"
               width={135}
               height={135}
