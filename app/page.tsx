@@ -5,6 +5,10 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { v4 as uuidv4 } from 'uuid';
 
+import AgentSidebar from '../components/AgentSidebar';
+import { AgentId, defaultAgentId } from '../config/agents';
+
+// typer for vidensbank
 type DriveFile = {
   id?: string;
   name: string;
@@ -12,7 +16,8 @@ type DriveFile = {
   modifiedTime?: string;
 };
 
-function FileSidebar() {
+// panel til højre med Google Drive filer
+function KnowledgePanel() {
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,14 +32,13 @@ function FileSidebar() {
       setFiles(list);
       setLastUpdated(new Date().toLocaleTimeString('da-DK'));
     } catch {
-      setError('Fejl ved opdatering af filer');
+      setError('Fejl ved hentning af filer');
     }
   }
 
   useEffect(() => {
     async function loadFiles() {
       try {
-        setLoading(true);
         const res = await fetch('/api/drive-test');
         if (!res.ok) throw new Error();
         const data = await res.json();
@@ -42,7 +46,7 @@ function FileSidebar() {
         setFiles(list);
         setLastUpdated(new Date().toLocaleTimeString('da-DK'));
       } catch {
-        setError('Kunne ikke hente filer');
+        setError('Fejl ved hentning af filer');
       } finally {
         setLoading(false);
       }
@@ -53,8 +57,8 @@ function FileSidebar() {
   return (
     <div
       style={{
-        width: '240px',
-        borderRight: '1px solid rgba(255,255,255,0.12)',
+        width: 260,
+        borderLeft: '1px solid rgba(255,255,255,0.12)',
         background: 'linear-gradient(180deg, rgba(0,34,51,0.95), rgba(0,71,92,0.95))',
         display: 'flex',
         flexDirection: 'column',
@@ -95,8 +99,9 @@ function FileSidebar() {
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading && <div style={{ color: 'rgba(255,255,255,0.6)' }}>Indlæser filer</div>}
         {error && <div style={{ color: '#ffb3b3' }}>{error}</div>}
+
         {!loading && !error && files.length === 0 && (
-          <div style={{ color: 'rgba(255,255,255,0.6)' }}>Ingen filer registreret</div>
+          <div style={{ color: 'rgba(255,255,255,0.6)' }}>Ingen filer fundet</div>
         )}
 
         {!loading && !error && files.length > 0 && (
@@ -114,6 +119,7 @@ function FileSidebar() {
                 >
                   {file.name}
                 </div>
+
                 <div
                   style={{
                     fontSize: '0.7rem',
@@ -149,11 +155,14 @@ function FileSidebar() {
   );
 }
 
+// selve chat siden
 export default function ChatPage() {
+  const [currentAgentId, setCurrentAgentId] = useState<AgentId>(defaultAgentId);
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
   const inputRef = useRef<HTMLInputElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -174,6 +183,7 @@ export default function ChatPage() {
     setConversationId(storedId);
   }, []);
 
+  // send besked til API
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -186,10 +196,15 @@ export default function ChatPage() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: conversationId, message: input }),
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          message: input,
+          agent_id: currentAgentId,
+        }),
       });
 
       const data = await res.json();
+
       if (data.reply) {
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       }
@@ -204,6 +219,7 @@ export default function ChatPage() {
     }
   };
 
+  // nulstil samtale
   const resetConversation = () => {
     localStorage.removeItem('conversation_id');
     setConversationId(null);
@@ -251,16 +267,16 @@ export default function ChatPage() {
         }
 
         @keyframes dots {
-          0% { opacity: 0.2; }
-          50% { opacity: 1; }
-          100% { opacity: 0.2; }
+          0 percent { opacity: 0.2; }
+          50 percent { opacity: 1; }
+          100 percent { opacity: 0.2; }
         }
       `}</style>
 
       <div
         style={{
           width: '100%',
-          maxWidth: 1200,
+          maxWidth: 1400,
           height: '92vh',
           display: 'flex',
           flexDirection: 'column',
@@ -270,7 +286,6 @@ export default function ChatPage() {
           background: 'linear-gradient(180deg, #002b44, #004d66)',
         }}
       >
-        {/* Header */}
         <div
           style={{
             background: 'linear-gradient(135deg, #002b44, #4e9fe3)',
@@ -283,26 +298,46 @@ export default function ChatPage() {
         >
           <h1
             style={{
-              fontSize: '1.25rem',
+              fontSize: '1.3rem',
               fontWeight: 600,
-              color: 'white',
+              color: '#ffffff',
               margin: 0,
             }}
           >
-            Virtoo Assistent MVP 0.12a
+            Virtoo Assistent MVP 0.13a
           </h1>
 
-          <Image
-            src="/VITROO logo_Black.png"
-            alt="Virtoo logo"
-            width={120}
-            height={120}
-            style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={resetConversation}
+              style={{
+                padding: '6px 10px',
+                borderRadius: 999,
+                border: 'none',
+                background: 'rgba(0,0,0,0.25)',
+                color: 'white',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+              }}
+            >
+              Reset chat
+            </button>
+
+            <Image
+              src="/VITROO logo_Black.png"
+              alt="Virtoo logo"
+              width={120}
+              height={120}
+              style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+            />
+          </div>
         </div>
 
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-          <FileSidebar />
+          <AgentSidebar
+            currentAgentId={currentAgentId}
+            onSelectAgent={(id) => setCurrentAgentId(id)}
+          />
 
           <div
             className="chat-scroll"
@@ -315,8 +350,14 @@ export default function ChatPage() {
             }}
           >
             {messages.length === 0 ? (
-              <p style={{ marginTop: 60, textAlign: 'center', color: 'rgba(255,255,255,0.7)' }}>
-                Start en samtale for at komme i gang.
+              <p
+                style={{
+                  marginTop: 60,
+                  textAlign: 'center',
+                  color: 'rgba(255,255,255,0.7)',
+                }}
+              >
+                Start en samtale ved at vælge agent og skrive en besked.
               </p>
             ) : (
               messages.map((msg, idx) => (
@@ -330,6 +371,7 @@ export default function ChatPage() {
                   >
                     {msg.role === 'user' ? 'Bruger' : 'Assistent'}
                   </div>
+
                   <div
                     style={{
                       display: 'inline-block',
@@ -350,7 +392,15 @@ export default function ChatPage() {
             )}
 
             {loading && (
-              <div style={{ marginTop: 10, color: 'white', display: 'flex', gap: 6 }}>
+              <div
+                style={{
+                  marginTop: 10,
+                  color: 'white',
+                  display: 'flex',
+                  gap: 6,
+                  alignItems: 'center',
+                }}
+              >
                 Assistenten tænker
                 <span style={{ animation: 'dots 1s infinite 0ms' }}>.</span>
                 <span style={{ animation: 'dots 1s infinite 200ms' }}>.</span>
@@ -360,9 +410,10 @@ export default function ChatPage() {
 
             <div ref={chatEndRef} />
           </div>
+
+          <KnowledgePanel />
         </div>
 
-        {/* Footer input */}
         <div
           style={{
             borderTop: '1px solid rgba(255,255,255,0.1)',
@@ -373,7 +424,6 @@ export default function ChatPage() {
             alignItems: 'center',
           }}
         >
-          {/* Upload button */}
           <button
             style={{
               width: 36,
@@ -389,13 +439,12 @@ export default function ChatPage() {
             +
           </button>
 
-          {/* Main text input */}
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            placeholder="Spørg mig"
+            placeholder="Skriv din besked"
             style={{
               flex: 1,
               padding: '10px 14px',
@@ -404,7 +453,6 @@ export default function ChatPage() {
             }}
           />
 
-          {/* Send button */}
           <button
             onClick={sendMessage}
             disabled={loading || !input.trim()}
@@ -424,7 +472,6 @@ export default function ChatPage() {
             Send
           </button>
 
-          {/* Reset */}
           <button
             onClick={resetConversation}
             style={{
