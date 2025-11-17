@@ -15,6 +15,7 @@ const agents = {
 Du er en ekspert i at skrive danske LinkedIn opslag.
 Fokus på kortfattethed, relevans, professionelle pointer og klar værdi.
 Skriv i et let genkendeligt LinkedIn format med korte afsnit og korte linjeskift.
+Sørg for at at sætningen men se altid giver mening inden der vises "Vis mere"
     `
   },
   business: {
