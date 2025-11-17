@@ -7,6 +7,28 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Agent definitions
+const agents = {
+  linkedin: {
+    name: "LinkedIn Tekstskriver",
+    instructions: `
+Du er en ekspert i at skrive danske LinkedIn opslag.
+Fokus på kortfattethed, relevans, professionelle pointer og klar værdi.
+Skriv i et let genkendeligt LinkedIn format med korte afsnit og korte linjeskift.
+    `
+  },
+  business: {
+    name: "Virksomhedsassistent",
+    instructions: `
+Du er en professionel virksomhedsassistent.
+Du analyserer brugernes spørgsmål og leverer klare, strukturerede svar.
+Du bruger tydelige overskrifter, punktopstilling og kortfattet professionel dansk.
+    `
+  }
+};
+
+const defaultAgent = "business";
+
 // Din Google Drive mappe ID
 const FOLDER_ID = "1ejPRZ-aFHmUf6wiwhZPABDXoIQ7PnG_q";
 
@@ -56,37 +78,44 @@ async function fetchDriveKnowledge(): Promise<string> {
 
 export async function POST(req: Request) {
   try {
-    const { message } = await req.json();
+    const { message, agent_id } = await req.json();
+
     if (!message) {
       return NextResponse.json({ error: "Ingen besked modtaget" }, { status: 400 });
     }
 
+    // Agentvalg
+    const agentKey = agent_id && agents[agent_id] ? agent_id : defaultAgent;
+    const agent = agents[agentKey];
+
     // Hent viden fra Google Drive
     const knowledge = await fetchDriveKnowledge();
 
-    // Sammensæt systemprompt
+    // Systemprompt der kombinerer agent instruktioner og virksomhedens vidensdatabase
     const systemPrompt = `
-Du er en intern AI-assistent hos Virtoo.ai.
-Brug nedenstående virksomhedsviden fra Google Drive, når du svarer på spørgsmål.
+Du fungerer som denne agent:
+${agent.name}
 
-VIDEN FRA DOKUMENTER:
+Primære instruktioner:
+${agent.instructions}
+
+Virksomhedsviden fra Google Drive:
 ${knowledge}
----
 
-Svar altid tydeligt, med afsnit, overskrifter og evt. punktlister.
-Brug fed skrift til nøgleord og skriv på dansk, med professionel tone.
-`;
+Svar på dansk. Brug klare afsnit og en professionel tone.
+    `.trim();
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: message },
+        { role: "user", content: message }
       ],
-      temperature: 0.7,
+      temperature: 0.5,
     });
 
-    const reply = completion.choices[0].message?.content || "Intet svar fra modellen.";
+    const reply =
+      completion.choices[0].message?.content || "Ingen respons fra modellen.";
 
     return NextResponse.json({ reply });
   } catch (error: any) {
