@@ -7,13 +7,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Google Drive IDs
+// Mappe til vidensbank
 const KNOWLEDGE_FOLDER_ID = "1ejPRZ-aFHmUf6wiwhZPABDXoIQ7PnG_q";
+// Mappe til agent instruktionssæt
 const AGENT_INSTRUCTION_FOLDER_ID = "1ZHmI29Rt-qSK6eMIAnrwX4LcK2ltwpa1";
 
-// ─────────────────────────────────────────────
-// HENT GOOGLE CLIENT
-// ─────────────────────────────────────────────
+// Fælles Drive klient
 function getDriveClient() {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_KEY || "{}");
 
@@ -25,9 +24,7 @@ function getDriveClient() {
   return google.drive({ version: "v3", auth });
 }
 
-// ─────────────────────────────────────────────
-// HENT VIDEN FRA DRIVE
-// ─────────────────────────────────────────────
+// Hent vidensbank fra Drive (pdf)
 async function fetchDriveKnowledge(): Promise<string> {
   try {
     const drive = getDriveClient();
@@ -62,16 +59,14 @@ ${parsed.text.slice(0, 5000)}
       }
     }
 
-    return allText || "Ingen data fundet.";
+    return allText || "Ingen data fundet i vidensbanken.";
   } catch (error) {
     console.error("Fejl i fetchDriveKnowledge:", error);
     return "Kunne ikke hente viden fra Google Drive.";
   }
 }
 
-// ─────────────────────────────────────────────
-// HENT AGENT INSTRUKTIONER
-// ─────────────────────────────────────────────
+// Hent instruktionssæt for given agent fra Drive
 async function fetchAgentInstructions(agentName: string): Promise<string> {
   try {
     const drive = getDriveClient();
@@ -83,32 +78,48 @@ async function fetchAgentInstructions(agentName: string): Promise<string> {
 
     const files = res.data.files || [];
 
-    // FIND FIL NAVNGIVET EFTER AGENT
-    // Eksempel: "LinkedIn.txt" matcher agentName: "LinkedIn"
     const file = files.find((f) =>
       f.name.toLowerCase().includes(agentName.toLowerCase())
     );
 
     if (!file) {
-      return `Instruktionsfil for agent '${agentName}' blev ikke fundet.`;
+      console.warn(`Ingen instruktionsfil fundet for agent: ${agentName}`);
+      return `Instruktionsfil for agent '${agentName}' blev ikke fundet. Brug standardadfærd.`;
     }
 
-    // HENT FILENS INDHOLD
-    const response = await drive.files.get(
-      { fileId: file.id!, alt: "media" },
-      { responseType: "text" }
-    );
+    let buffer: Buffer;
 
-    return response.data as string;
+    // Rigtige filer som .txt osv
+    if (file.mimeType === "text/plain" || file.mimeType === "application/octet-stream") {
+      const resp = await drive.files.get(
+        { fileId: file.id!, alt: "media" },
+        { responseType: "arraybuffer" }
+      );
+      buffer = Buffer.from(resp.data as ArrayBuffer);
+    }
+    // Hvis du senere bruger Google Docs
+    else if (file.mimeType?.startsWith("application/vnd.google-apps")) {
+      const resp = await drive.files.export(
+        { fileId: file.id!, mimeType: "text/plain" },
+        { responseType: "arraybuffer" }
+      );
+      buffer = Buffer.from(resp.data as ArrayBuffer);
+    } else {
+      console.warn(`Ukendt mimetype for instruktionsfil: ${file.mimeType}`);
+      return `Instruktionsfil for agent '${agentName}' kunne ikke læses pga. filtype.`;
+    }
+
+    const text = buffer.toString("utf8").trim();
+    console.info(`Instruktionsfil for agent '${agentName}' indlæst: ${file.name}`);
+
+    return text || `Instruktionsfil for agent '${agentName}' var tom.`;
   } catch (error) {
     console.error("Fejl i fetchAgentInstructions:", error);
     return "Kunne ikke hente agentens instruktionssæt.";
   }
 }
 
-// ─────────────────────────────────────────────
-// API ENDPOINT
-// ─────────────────────────────────────────────
+// API endpoint
 export async function POST(req: Request) {
   try {
     const { message, agent } = await req.json();
@@ -121,31 +132,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Ingen agent specificeret" }, { status: 400 });
     }
 
-    // HENT VIDEN + AGENT-PROMPT
     const [knowledge, agentInstructions] = await Promise.all([
       fetchDriveKnowledge(),
       fetchAgentInstructions(agent),
     ]);
 
-    // SYSTEM-PROMPT
     const systemPrompt = `
-Du er "${agent}" agenten.
+Du er agenten "${agent}".
 
 Instruktionssæt for denne agent:
 ${agentInstructions}
 
-Virksomhedsviden:
+Virksomhedsviden (til kontekst):
 ${knowledge}
 
 Retningslinjer:
-- Svar på dansk
-- Professionelt virksomhedssprog
-- Brug klare afsnit
-- Brug fed skrift til nøgleord
-- Svar kortfattet og præcist
+- Svar altid på dansk
+- Brug professionelt virksomhedssprog
+- Svar struktureret med korte afsnit
+- Brug fed skrift til nøglebegreber
 `;
 
-    // OPENAI REQUEST
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
