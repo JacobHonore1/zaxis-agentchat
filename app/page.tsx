@@ -58,147 +58,151 @@ export default function HomePage() {
   }
 
   return (
+  <div
+    style={{
+      width: "100vw",
+      height: "100vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      background: "linear-gradient(180deg, #012230, #013549)",
+      overflow: "hidden"
+    }}
+  >
+    {/* Outer content area med spacing */}
     <div
       style={{
-        position: "fixed",
-        inset: 0,
-        background: "linear-gradient(180deg, #012230, #013549)",
+        width: "90%",
+        height: "90%",
         display: "flex",
-        overflow: "hidden",
+        gap: "20px"
       }}
     >
-      {/* Indvendig wrapper med 10 procent margin og padding top/bund */}
-      <div
-        style={{
-          display: "flex",
-          flex: 1,
-          margin: "0 10%",
-          padding: "20px 0",
-          overflow: "hidden",
-        }}
-      >
-        {/* Agents i venstre side */}
+      {/* Sidebar venstre */}
+      <div style={{ width: "260px", height: "100%" }}>
         <AgentSidebar
           currentAgentId={currentAgent}
           onSelectAgent={(id) => setCurrentAgent(id)}
         />
+      </div>
 
-        {/* Chat midtfor */}
+      {/* Chat område */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          padding: "20px",
+          background: "rgba(255,255,255,0.03)",
+          borderRadius: "16px",
+          overflow: "hidden"
+        }}
+      >
+        {/* Beskeder */}
         <div
           style={{
             flex: 1,
-            margin: "0 20px",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            background: "rgba(0,0,0,0.12)",
-            borderRadius: 12,
-            padding: 20,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+            overflowY: "auto",
+            paddingRight: 8
           }}
         >
-          {/* Chat med scrollbar */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              overflowX: "hidden",
-              paddingRight: 10,
-            }}
-          >
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                style={{
-                  marginBottom: 12,
-                  display: "flex",
-                  flexDirection: "column",
-                  maxWidth: "70%",
-                  background:
-                    msg.role === "user"
-                      ? "rgba(255,255,255,0.15)"
-                      : "rgba(0,0,0,0.25)",
-                  padding: 12,
-                  borderRadius: 10,
-                  color: "white",
-                }}
-              >
-                <strong
-                  style={{
-                    fontSize: "0.8rem",
-                    marginBottom: 6,
-                    opacity: 0.8,
-                  }}
-                >
-                  {msg.role === "user" ? "Bruger" : "Assistent"}
-                </strong>
-
-                <span style={{ fontSize: "1rem" }}>{msg.content}</span>
-              </div>
-            ))}
-
-            {isLoading && (
-              <div
-                style={{
-                  marginTop: 10,
-                  fontStyle: "italic",
-                  color: "rgba(255,255,255,0.6)",
-                }}
-              >
-                Assistenten skriver…
-              </div>
-            )}
-          </div>
-
-          {/* Inputfelt */}
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-              padding: "12px",
-              background: "rgba(0,0,0,0.25)",
-              borderRadius: 12,
-              marginTop: 10,
-            }}
-          >
-            <input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Skriv din besked"
+          {messages.map((msg, index) => (
+            <div
+              key={index}
               style={{
-                flex: 1,
-                padding: "12px",
-                borderRadius: 8,
-                border: "none",
-                outline: "none",
-                background: "rgba(255,255,255,0.1)",
-                color: "white",
-              }}
-            />
-
-            <button
-              onClick={sendMessage}
-              disabled={isLoading}
-              style={{
-                padding: "10px 18px",
-                borderRadius: 8,
-                border: "none",
-                cursor: "pointer",
-                background: isLoading ? "gray" : "#0af",
-                color: "white",
-                fontWeight: 600,
+                marginBottom: 12,
+                display: "flex",
+                flexDirection: "column",
+                maxWidth: "60%",
+                background:
+                  msg.role === "user"
+                    ? "rgba(255,255,255,0.12)"
+                    : "rgba(0,0,0,0.25)",
+                padding: 12,
+                borderRadius: 10,
+                color: "white"
               }}
             >
-              Send
-            </button>
-          </div>
+              <strong
+                style={{
+                  fontSize: "0.8rem",
+                  marginBottom: 6,
+                  opacity: 0.8
+                }}
+              >
+                {msg.role === "user" ? "Bruger" : "Assistent"}
+              </strong>
+              <span style={{ fontSize: "1rem" }}>{msg.content}</span>
+            </div>
+          ))}
+
+          {isLoading && (
+            <div
+              style={{
+                marginTop: 10,
+                fontStyle: "italic",
+                color: "rgba(255,255,255,0.6)"
+              }}
+            >
+              Assistenten skriver…
+            </div>
+          )}
         </div>
 
-        {/* Vidensbank */}
+        {/* Input */}
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            alignItems: "center",
+            padding: "12px",
+            background: "rgba(0,0,0,0.25)",
+            borderRadius: 12
+          }}
+        >
+          <input
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Skriv din besked"
+            style={{
+              flex: 1,
+              padding: "12px",
+              borderRadius: 8,
+              border: "none",
+              outline: "none"
+            }}
+          />
+
+          <button
+            onClick={sendMessage}
+            disabled={isLoading}
+            style={{
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "none",
+              cursor: "pointer",
+              background: isLoading ? "gray" : "#0af",
+              color: "white",
+              fontWeight: 600
+            }}
+          >
+            Send
+          </button>
+        </div>
+      </div>
+
+      {/* Vidensbank – fast bredde og synlig */}
+      <div
+        style={{
+          width: "300px",
+          height: "100%",
+          borderRadius: "16px",
+          overflow: "hidden"
+        }}
+      >
         <KnowledgeSidebar />
       </div>
     </div>
-  );
-}
+  </div>
+);
