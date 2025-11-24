@@ -1,415 +1,275 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
-import ReactMarkdown from 'react-markdown';
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect, useRef } from "react";
+import AgentSidebar from "../components/AgentSidebar";
+import { AgentId, defaultAgentId } from "../config/agents";
 
-import AgentSidebar from '../components/AgentSidebar';
-import { AgentId, defaultAgentId } from '../config/agents';
-
-type DriveFile = {
-  id?: string;
-  name: string;
-  mimeType?: string;
-  modifiedTime?: string;
-};
-
-function KnowledgePanel() {
-  const [files, setFiles] = useState<DriveFile[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadFiles() {
-      try {
-        const res = await fetch('/api/drive-test');
-        const data = await res.json();
-        const list = Array.isArray(data.files) ? data.files : data;
-        setFiles(list);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadFiles();
-  }, []);
-
-  return (
-    <div
-      style={{
-        width: 260,
-        borderLeft: '1px solid rgba(255,255,255,0.12)',
-        background: 'linear-gradient(180deg, rgba(0,34,51,0.95), rgba(0,71,92,0.95))',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '12px 10px',
-        overflow: 'hidden',
-      }}
-    >
-      <div
-        style={{
-          marginBottom: 10,
-          paddingBottom: 8,
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-        }}
-      >
-        <div
-          style={{
-            fontSize: '0.7rem',
-            textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.5)',
-            marginBottom: 4,
-            letterSpacing: '0.08em',
-          }}
-        >
-          Vidensbank
-        </div>
-
-        <div
-          style={{
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            color: '#ffffff',
-          }}
-        >
-          Google Drive filer
-        </div>
-      </div>
-
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading && <div style={{ color: 'rgba(255,255,255,0.6)' }}>Indlæser filer</div>}
-
-        {!loading &&
-          files.map(file => (
-            <div
-              key={file.id ?? file.name}
-              style={{
-                padding: '6px 4px',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '0.8rem',
-                  color: '#ffffff',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {file.name}
-              </div>
-
-              <div
-                style={{
-                  fontSize: '0.7rem',
-                  color: 'rgba(255,255,255,0.55)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <span>{file.mimeType?.split('/')[1] ?? 'ukendt'}</span>
-                {file.modifiedTime && (
-                  <span>{new Date(file.modifiedTime).toLocaleDateString('da-DK')}</span>
-                )}
-              </div>
-            </div>
-          ))}
-      </div>
-    </div>
-  );
-}
-
-export default function ChatPage() {
+export default function Home() {
+  const [messages, setMessages] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([]);
+  const [inputMessage, setInputMessage] = useState("");
   const [currentAgentId, setCurrentAgentId] = useState<AgentId>(defaultAgentId);
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const chatEndRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => inputRef.current?.focus(), [loading]);
-  useEffect(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages]);
-
+  // Auto-scroll
   useEffect(() => {
-    let storedId = localStorage.getItem('conversation_id');
-    if (!storedId) {
-      storedId = uuidv4();
-      localStorage.setItem('conversation_id', storedId);
-    }
-    setConversationId(storedId);
-  }, []);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+  // Send besked til backend
+  async function sendMessage() {
+    if (!inputMessage.trim()) return;
 
-    const userMessage = input;
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setInput('');
-    setLoading(true);
+    const userMsg = { role: "user", content: inputMessage };
+    setMessages((prev) => [...prev, userMsg]);
+
+    setIsLoading(true);
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: userMessage,
-          agent: currentAgentId,
+          message: inputMessage,
+          agent: currentAgentId, // 👈 VIGTIGT! Agent sendes NU korrekt
         }),
       });
 
       const data = await res.json();
 
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
-    } catch (err) {
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: 'Der opstod en fejl ved forbindelsen.' },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const assistantMsg = {
+        role: "assistant",
+        content: data.reply || "Intet svar modtaget",
+      };
 
-  const resetConversation = () => {
-    setMessages([]);
-    inputRef.current?.focus();
-  };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch (err) {
+      console.error("Fejl ved sendMessage:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Der opstod en fejl ved forbindelsen til serveren.",
+        },
+      ]);
+    }
+
+    setInputMessage("");
+    setIsLoading(false);
+  }
+
+  // Håndter Enter
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && !isLoading) {
+      sendMessage();
+    }
+  }
 
   return (
     <div
       style={{
-        margin: 0,
-        padding: 0,
-        height: '100vh',
-        width: '100vw',
-        overflow: 'hidden',
-        background: '#002233',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: "100vw",
+        height: "100vh",
+        background: "linear-gradient(180deg, #022038, #003047 70%)",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <style jsx global>{`
-        html,
-        body {
-          margin: 0;
-          padding: 0;
-          height: 100%;
-          width: 100%;
-          overflow: hidden;
-          background-color: #002233;
-        }
-
-        .chat-scroll::-webkit-scrollbar {
-          width: 6px;
-        }
-        .chat-scroll::-webkit-scrollbar-thumb {
-          background-color: #002233;
-          border-radius: 10px;
-        }
-        .chat-scroll::-webkit-scrollbar-thumb:hover {
-          background-color: #003355;
-        }
-
-        @keyframes dots {
-          0 percent { opacity: 0.2 }
-          50 percent { opacity: 1 }
-          100 percent { opacity: 0.2 }
-        }
-      `}</style>
-
+      {/* HEADER */}
       <div
         style={{
-          width: '100%',
-          maxWidth: 1400,
-          height: '92vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          borderRadius: 20,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-          background: 'linear-gradient(180deg, #002b44, #004d66)',
+          height: 60,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 24px",
+          background: "rgba(255,255,255,0.06)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          fontSize: "1.1rem",
+          fontWeight: 600,
+          color: "white",
         }}
       >
+        Virtoo Assistent MVP 0.13a
+      </div>
+
+      {/* MAIN LAYOUT */}
+      <div style={{ flex: 1, display: "flex" }}>
+        {/* SIDEBAR */}
+        <AgentSidebar
+          currentAgentId={currentAgentId}
+          onSelectAgent={(id) => setCurrentAgentId(id)}
+        />
+
+        {/* CHAT */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #002b44, #4e9fe3)',
-            padding: '8px 24px',
-            height: '50px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            flex: 1,
+            padding: 20,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
           }}
         >
-          <h1
-            style={{
-              fontSize: '1.3rem',
-              fontWeight: 600,
-              color: '#ffffff',
-              margin: 0,
-            }}
-          >
-            Virtoo Assistent MVP 0.13a
-          </h1>
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              style={{
+                alignSelf: msg.role === "user" ? "flex-start" : "flex-start",
+                background:
+                  msg.role === "user"
+                    ? "rgba(255,255,255,0.12)"
+                    : "rgba(255,255,255,0.08)",
+                padding: "10px 16px",
+                borderRadius: 12,
+                maxWidth: "50%",
+                color: "white",
+                fontSize: "0.9rem",
+                lineHeight: 1.4,
+              }}
+            >
+              {msg.content}
+            </div>
+          ))}
 
-          <Image
-            src="/VITROO logo_Black.png"
-            alt="Virtoo logo"
-            width={120}
-            height={120}
-            style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
-          />
+          {isLoading && (
+            <div
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                padding: "10px 16px",
+                borderRadius: 12,
+                color: "white",
+                width: 120,
+                fontSize: "0.85rem",
+                opacity: 0.8,
+              }}
+            >
+              tænker…
+            </div>
+          )}
+
+          <div ref={messagesEndRef}></div>
         </div>
 
-        {/* MAIN LAYOUT */}
-        <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-          <AgentSidebar
-            currentAgentId={currentAgentId}
-            onSelectAgent={setCurrentAgentId}
-          />
-
-          {/* CHAT */}
+        {/* VIDENSBANK (HIGH RIGHT PANEL) */}
+        <div
+          style={{
+            width: 300,
+            background: "rgba(0,0,0,0.28)",
+            padding: 12,
+            borderLeft: "1px solid rgba(255,255,255,0.08)",
+            color: "white",
+          }}
+        >
           <div
-            className="chat-scroll"
             style={{
-              flex: 1,
-              padding: 20,
-              overflowY: 'auto',
-              background: 'linear-gradient(to bottom, #003355, #00475c)',
-              color: 'white'
+              fontSize: "0.9rem",
+              opacity: 0.7,
+              marginBottom: 8,
             }}
           >
-            {messages.map((msg, i) => (
-              <div key={i} style={{ marginBottom: 10 }}>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    marginBottom: 4,
-                    color: msg.role === 'user' ? '#5bc0de' : '#9fe2bf',
-                  }}
-                >
-                  {msg.role === 'user' ? 'Bruger' : 'Assistent'}
-                </div>
-
-                <div
-                  style={{
-                    display: 'inline-block',
-                    padding: '10px 14px',
-                    borderRadius: 12,
-                    background:
-                      msg.role === 'user'
-                        ? 'rgba(255,255,255,0.15)'
-                        : 'rgba(0,0,0,0.25)',
-                    maxWidth: '80%',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
-              </div>
-            ))}
-
-            {loading && (
-              <div
-                style={{
-                  marginTop: 10,
-                  color: 'white',
-                  display: 'flex',
-                  gap: 4,
-                  alignItems: 'center',
-                }}
-              >
-                Assistenten tænker
-                <span style={{ animation: 'dots 1s infinite 0ms' }}>.</span>
-                <span style={{ animation: 'dots 1s infinite 200ms' }}>.</span>
-                <span style={{ animation: 'dots 1s infinite 400ms' }}>.</span>
-              </div>
-            )}
-
-            <div ref={chatEndRef} />
+            Google Drive filer
           </div>
 
-          <KnowledgePanel />
-        </div>
-
-        {/* FOOTER */}
-        <div
-          style={{
-            borderTop: '1px solid rgba(255,255,255,0.1)',
-            padding: '12px',
-            background: '#003355',
-            display: 'flex',
-            gap: 10,
-            alignItems: 'center',
-          }}
-        >
-          <button
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 12,
-              background: 'rgba(255,255,255,0.15)',
-              border: 'none',
-              color: 'white',
-              fontSize: 20,
-              cursor: 'pointer',
-            }}
-          >
-            +
-          </button>
-
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage()}
-            placeholder="Skriv din besked"
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              borderRadius: 12,
-              border: 'none',
-            }}
-          />
-
-          <button
-            onClick={sendMessage}
-            disabled={loading || !input.trim()}
-            style={{
-              padding: '10px 16px',
-              borderRadius: 12,
-              border: 'none',
-              fontWeight: 600,
-              color: 'white',
-              cursor: !input.trim() ? 'not-allowed' : 'pointer',
-              background: !input.trim()
-                ? 'linear-gradient(135deg, #888, #aaa)'
-                : 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
-              transition: '0.2s ease',
-            }}
-          >
-            Send
-          </button>
-
-          <button
-            onClick={resetConversation}
-            style={{
-              padding: '10px 14px',
-              borderRadius: 12,
-              border: 'none',
-              background: 'linear-gradient(135deg, #6C63FF, #4ECDC4)',
-              color: 'white',
-              cursor: 'pointer',
-            }}
-          >
-            🔄
-          </button>
+          <DriveFilesPanel />
         </div>
       </div>
+
+      {/* INPUT BAR */}
+      <div
+        style={{
+          height: 60,
+          display: "flex",
+          alignItems: "center",
+          padding: 12,
+          gap: 8,
+        }}
+      >
+        <button
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 6,
+            background: "rgba(255,255,255,0.12)",
+            border: "none",
+            color: "white",
+            cursor: "pointer",
+            fontSize: 22,
+          }}
+        >
+          +
+        </button>
+
+        <input
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Skriv din besked"
+          style={{
+            flex: 1,
+            padding: "10px 14px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.18)",
+            background: "rgba(255,255,255,0.1)",
+            color: "white",
+            outline: "none",
+          }}
+        />
+
+        <button
+          onClick={sendMessage}
+          disabled={isLoading}
+          style={{
+            width: 70,
+            height: 36,
+            borderRadius: 8,
+            border: "none",
+            background: inputMessage.trim()
+              ? "#3BA9FF"
+              : "rgba(255,255,255,0.2)",
+            color: "white",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------
+   RIGHT SIDEBAR: DRIVE FILE LIST (dummy until backend exists)
+---------------------------------------------------------*/
+function DriveFilesPanel() {
+  const dummy = [
+    "Korrekturlæsning og forbedring af tekst",
+    "Amanda_Vahle GPT.pdf",
+    "JE-TRÆ FACADEDØRE.pdf",
+    "PersonaMalgrupper2018.pdf",
+    "Rammeaftale for erhvervshusene.pdf",
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {dummy.map((name, i) => (
+        <div
+          key={i}
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            padding: 8,
+            borderRadius: 6,
+            fontSize: "0.8rem",
+            color: "white",
+          }}
+        >
+          {name}
+        </div>
+      ))}
     </div>
   );
 }
