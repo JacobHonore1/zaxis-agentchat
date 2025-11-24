@@ -62,15 +62,15 @@ export default function HomePage() {
       style={{
         width: "100vw",
         height: "100vh",
-        background: "#002233",
+        background: "#002233",            // mørk baggrund over hele skærmen
         display: "flex",
-        padding: "20px",
+        padding: "20px",                  // padding i sider, top, bund
         boxSizing: "border-box",
-        overflow: "hidden",
+        overflow: "hidden",               // ingen scroll på selve browseren
         gap: "20px",
       }}
     >
-      {/* Venstre sidebar */}
+      {/* Venstre sidebar – AI agenter */}
       <div style={{ width: "260px", height: "100%" }}>
         <AgentSidebar
           currentAgentId={currentAgent}
@@ -87,9 +87,10 @@ export default function HomePage() {
           borderRadius: "16px",
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
+          overflow: "hidden",             // kun scroll inde i besked-listen
         }}
       >
+        {/* Beskeder med scroll */}
         <div
           style={{
             flex: 1,
@@ -141,7 +142,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Input */}
+        {/* Inputlinje */}
         <div
           style={{
             display: "flex",
@@ -181,9 +182,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Vidensbank */}
+      {/* Vidensbank – højre kolonne */}
       <div style={{ width: "300px", height: "100%" }}>
-        <KnowledgeSidebar />
+        {/* tom handler – du kan senere bruge fileId her */}
+        <KnowledgeSidebar onSelectFile={(_id: string) => {}} />
       </div>
     </div>
   );
