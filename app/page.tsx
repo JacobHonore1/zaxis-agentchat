@@ -19,11 +19,7 @@ export default function HomePage() {
   async function sendMessage() {
     if (!inputMessage.trim()) return;
 
-    const userMsg: { role: "user"; content: string } = {
-      role: "user",
-      content: inputMessage,
-    };
-
+    const userMsg = { role: "user" as const, content: inputMessage };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
@@ -38,19 +34,17 @@ export default function HomePage() {
       });
 
       const data = await res.json();
-
-      const assistantMsg: { role: "assistant"; content: string } = {
-        role: "assistant",
+      const assistantMsg = {
+        role: "assistant" as const,
         content: data.reply || "Intet svar modtaget",
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch (err) {
-      const assistantErrorMsg: { role: "assistant"; content: string } = {
-        role: "assistant",
-        content: "Der opstod en fejl i kommunikationen med serveren.",
-      };
-      setMessages((prev) => [...prev, assistantErrorMsg]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Der opstod en serverfejl." },
+      ]);
     }
 
     setInputMessage("");
@@ -65,40 +59,30 @@ export default function HomePage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "linear-gradient(180deg, #012230, #013549)",
+        background: "#002233",
         overflow: "hidden"
       }}
     >
-      {/* Outer content area med spacing */}
-      <div
-        style={{
-          width: "90%",
-          height: "90%",
-          display: "flex",
-          gap: "20px"
-        }}
-      >
-        {/* Sidebar venstre */}
-        <div style={{ width: "260px", height: "100%" }}>
+      <div className="main-area">
+        
+        {/* Agent menu */}
+        <div style={{ width: 260 }} className="panel">
           <AgentSidebar
             currentAgentId={currentAgent}
             onSelectAgent={(id) => setCurrentAgent(id)}
           />
         </div>
 
-        {/* Chat område */}
+        {/* Chat */}
         <div
+          className="panel"
           style={{
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            padding: "20px",
-            background: "rgba(255,255,255,0.03)",
-            borderRadius: "16px",
-            overflow: "hidden"
+            padding: 20
           }}
         >
-          {/* Beskeder */}
           <div
             style={{
               flex: 1,
@@ -106,56 +90,40 @@ export default function HomePage() {
               paddingRight: 8
             }}
           >
-            {messages.map((msg, index) => (
+            {messages.map((msg, i) => (
               <div
-                key={index}
+                key={i}
                 style={{
                   marginBottom: 12,
-                  display: "flex",
-                  flexDirection: "column",
+                  padding: 12,
+                  borderRadius: 10,
                   maxWidth: "60%",
                   background:
                     msg.role === "user"
                       ? "rgba(255,255,255,0.12)"
                       : "rgba(0,0,0,0.25)",
-                  padding: 12,
-                  borderRadius: 10,
                   color: "white"
                 }}
               >
-                <strong
-                  style={{
-                    fontSize: "0.8rem",
-                    marginBottom: 6,
-                    opacity: 0.8
-                  }}
-                >
+                <strong style={{ fontSize: "0.8rem", opacity: 0.8 }}>
                   {msg.role === "user" ? "Bruger" : "Assistent"}
                 </strong>
-                <span style={{ fontSize: "1rem" }}>{msg.content}</span>
+                <div style={{ marginTop: 6 }}>{msg.content}</div>
               </div>
             ))}
 
             {isLoading && (
-              <div
-                style={{
-                  marginTop: 10,
-                  fontStyle: "italic",
-                  color: "rgba(255,255,255,0.6)"
-                }}
-              >
+              <div style={{ color: "rgba(255,255,255,0.6)", marginTop: 10 }}>
                 Assistenten skriver…
               </div>
             )}
           </div>
 
-          {/* Input */}
           <div
             style={{
               display: "flex",
               gap: 12,
-              alignItems: "center",
-              padding: "12px",
+              padding: 12,
               background: "rgba(0,0,0,0.25)",
               borderRadius: 12
             }}
@@ -193,14 +161,7 @@ export default function HomePage() {
         </div>
 
         {/* Vidensbank */}
-        <div
-          style={{
-            width: "300px",
-            height: "100%",
-            borderRadius: "16px",
-            overflow: "hidden"
-          }}
-        >
+        <div style={{ width: 300 }} className="panel">
           <KnowledgeSidebar />
         </div>
       </div>
