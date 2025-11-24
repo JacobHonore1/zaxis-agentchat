@@ -45,7 +45,7 @@ export default function HomePage() {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch {
+    } catch (err) {
       const assistantErrorMsg: { role: "assistant"; content: string } = {
         role: "assistant",
         content: "Der opstod en fejl i kommunikationen med serveren.",
@@ -60,65 +60,66 @@ export default function HomePage() {
   return (
     <div
       style={{
-        width: "100vw",
-        height: "100vh",
+        position: "fixed",
+        inset: 0,
         background: "linear-gradient(180deg, #012230, #013549)",
-        overflow: "hidden",
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "3vh 3vw",
-        boxSizing: "border-box",
+        overflow: "hidden",
       }}
     >
-      {/* Wrapper med afrundet kant og let skygge */}
+      {/* Indvendig wrapper med 10 procent margin og padding top/bund */}
       <div
         style={{
-          width: "100%",
-          height: "100%",
           display: "flex",
-          borderRadius: 20,
-          boxShadow: "0 0 35px rgba(0,0,0,0.35)",
+          flex: 1,
+          margin: "0 10%",
+          padding: "20px 0",
           overflow: "hidden",
-          background: "rgba(0,0,0,0.20)",
-          backdropFilter: "blur(4px)",
         }}
       >
+        {/* Agents i venstre side */}
         <AgentSidebar
           currentAgentId={currentAgent}
           onSelectAgent={(id) => setCurrentAgent(id)}
         />
 
+        {/* Chat midtfor */}
         <div
           style={{
             flex: 1,
-            padding: "24px",
+            margin: "0 20px",
             display: "flex",
             flexDirection: "column",
-            gap: 20,
+            overflow: "hidden",
+            background: "rgba(0,0,0,0.12)",
+            borderRadius: 12,
+            padding: 20,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
           }}
         >
+          {/* Chat med scrollbar */}
           <div
             style={{
               flex: 1,
               overflowY: "auto",
-              paddingRight: 6,
+              overflowX: "hidden",
+              paddingRight: 10,
             }}
           >
             {messages.map((msg, index) => (
               <div
                 key={index}
                 style={{
-                  marginBottom: 14,
+                  marginBottom: 12,
                   display: "flex",
                   flexDirection: "column",
-                  maxWidth: "60%",
+                  maxWidth: "70%",
                   background:
                     msg.role === "user"
                       ? "rgba(255,255,255,0.15)"
                       : "rgba(0,0,0,0.25)",
-                  padding: 14,
-                  borderRadius: 12,
+                  padding: 12,
+                  borderRadius: 10,
                   color: "white",
                 }}
               >
@@ -132,9 +133,7 @@ export default function HomePage() {
                   {msg.role === "user" ? "Bruger" : "Assistent"}
                 </strong>
 
-                <span style={{ fontSize: "1rem", lineHeight: 1.45 }}>
-                  {msg.content}
-                </span>
+                <span style={{ fontSize: "1rem" }}>{msg.content}</span>
               </div>
             ))}
 
@@ -151,6 +150,7 @@ export default function HomePage() {
             )}
           </div>
 
+          {/* Inputfelt */}
           <div
             style={{
               display: "flex",
@@ -159,6 +159,7 @@ export default function HomePage() {
               padding: "12px",
               background: "rgba(0,0,0,0.25)",
               borderRadius: 12,
+              marginTop: 10,
             }}
           >
             <input
@@ -172,7 +173,7 @@ export default function HomePage() {
                 borderRadius: 8,
                 border: "none",
                 outline: "none",
-                background: "rgba(255,255,255,0.15)",
+                background: "rgba(255,255,255,0.1)",
                 color: "white",
               }}
             />
@@ -195,6 +196,7 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Vidensbank */}
         <KnowledgeSidebar />
       </div>
     </div>
