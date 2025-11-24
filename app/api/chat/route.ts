@@ -7,12 +7,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Mappe til vidensbank
+// IDs
 const KNOWLEDGE_FOLDER_ID = "1ejPRZ-aFHmUf6wiwhZPABDXoIQ7PnG_q";
-// Mappe til agent instruktionssæt
 const AGENT_INSTRUCTION_FOLDER_ID = "1ZHmI29Rt-qSK6eMIAnrwX4LcK2ltwpa1";
 
-// Fælles Drive klient
+// Drive klient
 function getDriveClient() {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_KEY || "{}");
 
@@ -24,7 +23,7 @@ function getDriveClient() {
   return google.drive({ version: "v3", auth });
 }
 
-// Hent vidensbank fra Drive (pdf)
+// Vidensbank
 async function fetchDriveKnowledge(): Promise<string> {
   try {
     const drive = getDriveClient();
@@ -33,6 +32,8 @@ async function fetchDriveKnowledge(): Promise<string> {
       q: `'${KNOWLEDGE_FOLDER_ID}' in parents`,
       fields: "files(id, name, mimeType)",
     });
+
+    console.log("VIDENSBANK filer:", res.data.files);
 
     const files = res.data.files || [];
     let allText = "";
@@ -66,7 +67,7 @@ ${parsed.text.slice(0, 5000)}
   }
 }
 
-// Hent instruktionssæt for given agent fra Drive
+// Agent instruktioner
 async function fetchAgentInstructions(agentName: string): Promise<string> {
   try {
     const drive = getDriveClient();
@@ -76,46 +77,46 @@ async function fetchAgentInstructions(agentName: string): Promise<string> {
       fields: "files(id, name, mimeType)",
     });
 
+    console.log("AGENT FILER FUNDNE:", res.data.files);
+
     const files = res.data.files || [];
 
     const file = files.find((f) =>
       f.name.toLowerCase().includes(agentName.toLowerCase())
     );
 
+    console.log("VALGT AGENTFIL:", file);
+
     if (!file) {
-      console.warn(`Ingen instruktionsfil fundet for agent: ${agentName}`);
-      return `Instruktionsfil for agent '${agentName}' blev ikke fundet. Brug standardadfærd.`;
+      return `Ingen instruktionsfil fundet for agent '${agentName}'.`;
     }
 
     let buffer: Buffer;
 
-    // Rigtige filer som .txt osv
     if (file.mimeType === "text/plain" || file.mimeType === "application/octet-stream") {
       const resp = await drive.files.get(
         { fileId: file.id!, alt: "media" },
         { responseType: "arraybuffer" }
       );
       buffer = Buffer.from(resp.data as ArrayBuffer);
-    }
-    // Hvis du senere bruger Google Docs
-    else if (file.mimeType?.startsWith("application/vnd.google-apps")) {
+    } else if (file.mimeType?.startsWith("application/vnd.google-apps")) {
       const resp = await drive.files.export(
         { fileId: file.id!, mimeType: "text/plain" },
         { responseType: "arraybuffer" }
       );
       buffer = Buffer.from(resp.data as ArrayBuffer);
     } else {
-      console.warn(`Ukendt mimetype for instruktionsfil: ${file.mimeType}`);
-      return `Instruktionsfil for agent '${agentName}' kunne ikke læses pga. filtype.`;
+      console.warn("UKENDT mimetype:", file.mimeType);
+      return `Instruktionsfil '${file.name}' kunne ikke læses pga. filtype: ${file.mimeType}`;
     }
 
     const text = buffer.toString("utf8").trim();
-    console.info(`Instruktionsfil for agent '${agentName}' indlæst: ${file.name}`);
+    console.log("AGENT INSTRUKTION TEKST:", text);
 
-    return text || `Instruktionsfil for agent '${agentName}' var tom.`;
+    return text || "(Tom instruktionsfil)";
   } catch (error) {
     console.error("Fejl i fetchAgentInstructions:", error);
-    return "Kunne ikke hente agentens instruktionssæt.";
+    return "Kunne ikke hente agent instruktioner.";
   }
 }
 
@@ -124,13 +125,9 @@ export async function POST(req: Request) {
   try {
     const { message, agent } = await req.json();
 
-    if (!message) {
-      return NextResponse.json({ error: "Ingen besked modtaget" }, { status: 400 });
-    }
-
-    if (!agent) {
-      return NextResponse.json({ error: "Ingen agent specificeret" }, { status: 400 });
-    }
+    console.log("=== API REQUEST ===");
+    console.log("Agent:", agent);
+    console.log("Message:", message);
 
     const [knowledge, agentInstructions] = await Promise.all([
       fetchDriveKnowledge(),
@@ -140,18 +137,14 @@ export async function POST(req: Request) {
     const systemPrompt = `
 Du er agenten "${agent}".
 
-Instruktionssæt for denne agent:
+AGENT SPECIFIKKE INSTRUKTIONER:
 ${agentInstructions}
 
-Virksomhedsviden (til kontekst):
+VIDENSBANK:
 ${knowledge}
-
-Retningslinjer:
-- Svar altid på dansk
-- Brug professionelt virksomhedssprog
-- Svar struktureret med korte afsnit
-- Brug fed skrift til nøglebegreber
 `;
+
+    console.log("SYSTEM PROMPT SENDT TIL OPENAI:", systemPrompt);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -159,11 +152,12 @@ Retningslinjer:
         { role: "system", content: systemPrompt },
         { role: "user", content: message },
       ],
-      temperature: 0.7,
+      temperature: 0.6,
     });
 
-    const reply =
-      completion.choices[0].message?.content || "Intet svar fra modellen.";
+    const reply = completion.choices[0].message?.content || "(intet svar)";
+
+    console.log("MODEL SVAR:", reply);
 
     return NextResponse.json({ reply });
   } catch (error: any) {
