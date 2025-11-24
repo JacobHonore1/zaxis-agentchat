@@ -1,73 +1,110 @@
 'use client';
 
-type KnowledgeFile = {
+import { useEffect, useState } from 'react';
+
+type FileItem = {
+  id: string;
   name: string;
   mimeType: string;
 };
 
 export default function KnowledgeSidebar() {
-  const mockFiles: KnowledgeFile[] = [
-    { name: "Korrekturlæsning.pdf", mimeType: "application/pdf" },
-    { name: "Personas.txt", mimeType: "text/plain" },
-    { name: "Rammeaftale.docx", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
-  ];
+  const [files, setFiles] = useState<FileItem[]>([]);
 
-  function getIcon(mime: string) {
-    if (mime === "application/pdf") return "📄";
-    if (mime === "text/plain") return "📝";
-    if (mime.includes("word")) return "📘";
-    return "📁";
+  // Kort MIME-type konvertering
+  function getShortType(mime: string): string {
+    if (!mime) return '';
+
+    if (mime.includes('pdf')) return 'PDF';
+    if (mime.includes('plain')) return 'TXT';
+    if (mime.includes('word')) return 'DOCX';
+    if (mime.includes('spreadsheet') || mime.includes('excel')) return 'XLSX';
+    if (mime.includes('image')) return 'Billede';
+
+    return mime.split('/')[1] || mime;
   }
+
+  useEffect(() => {
+    async function loadFiles() {
+      try {
+        const res = await fetch('/api/drive-files');
+        const data = await res.json();
+        setFiles(data.files || []);
+      } catch (e) {
+        console.error('Fejl ved hentning af filer:', e);
+      }
+    }
+
+    loadFiles();
+  }, []);
 
   return (
     <div
       style={{
-        width: 260,
-        background: "rgba(0,0,0,0.35)",
-        borderLeft: "1px solid rgba(255,255,255,0.08)",
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-        overflowY: "auto",
+        width: '300px',
+        background: 'rgba(0,0,0,0.25)',
+        padding: '16px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        borderLeft: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      <div
+      <h3
         style={{
-          fontSize: "0.85rem",
-          textTransform: "uppercase",
-          color: "rgba(255,255,255,0.75)",
-          marginBottom: 6,
-          letterSpacing: "0.08em",
+          color: 'white',
+          fontSize: '1rem',
+          marginBottom: '12px',
+          opacity: 0.8,
         }}
       >
-        Vidensbank filer
-      </div>
+        VIDENSBANK FILER
+      </h3>
 
-      {mockFiles.map((file, idx) => (
+      {files.map((file) => (
         <div
-          key={idx}
+          key={file.id}
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "8px 10px",
-            background: "rgba(255,255,255,0.06)",
-            borderRadius: 8,
-            color: "white",
-            fontSize: "0.9rem",
+            background: 'rgba(255,255,255,0.07)',
+            padding: '12px',
+            borderRadius: '10px',
+            marginBottom: '12px',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'flex-start',
+            cursor: 'pointer',
           }}
         >
-          <span style={{ fontSize: "1.2rem" }}>{getIcon(file.mimeType)}</span>
-          <div>
-            <div style={{ fontWeight: 600 }}>{file.name}</div>
+          {/* Ikon baseret på Type */}
+          <div style={{ fontSize: '1.3rem' }}>
+            {file.mimeType.includes('pdf') && '📕'}
+            {file.mimeType.includes('plain') && '📄'}
+            {file.mimeType.includes('word') && '📝'}
+            {file.mimeType.includes('spreadsheet') && '📊'}
+            {file.mimeType.includes('image') && '🖼️'}
+            {!file.mimeType && '📁'}
+          </div>
+
+          <div style={{ color: 'white', overflow: 'hidden' }}>
             <div
               style={{
-                opacity: 0.65,
-                fontSize: "0.75rem",
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '210px',
               }}
             >
-              {file.mimeType}
+              {file.name}
+            </div>
+
+            <div
+              style={{
+                fontSize: '0.75rem',
+                opacity: 0.7,
+                marginTop: '2px',
+              }}
+            >
+              {getShortType(file.mimeType)}
             </div>
           </div>
         </div>
