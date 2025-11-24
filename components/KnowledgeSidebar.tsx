@@ -1,77 +1,63 @@
-"use client";
+'use client';
 
 type FileItem = {
-  id: string;
   name: string;
-  mimeType?: string | null;
+  type: string;
 };
 
-type Props = {
-  files?: FileItem[];
-};
-
-export default function KnowledgeSidebar({ files = [] }: Props) {
-  function shortMime(mime?: string | null) {
-    if (!mime) return "ukendt";
-
-    if (mime.includes("pdf")) return "PDF";
-    if (mime.includes("word")) return "DOCX";
-    if (mime.includes("plain")) return "TXT";
-
-    const simple = mime.split("/").pop();
-    return simple ? simple.toUpperCase() : "FILE";
-  }
-
-  function getIcon(mime?: string | null) {
-    if (!mime) return "📄";
-
-    if (mime.includes("pdf")) return "📕";
-    if (mime.includes("word")) return "📘";
-    if (mime.includes("plain")) return "📄";
-
-    return "📁";
-  }
+export default function KnowledgeSidebar() {
+  const mockFiles: FileItem[] = [
+    { name: "Amanda_Wahle GPT.pdf", type: "PDF" },
+    { name: "Personas.pdf", type: "PDF" },
+    { name: "JE-TRÆ Facadedøre.pdf", type: "PDF" }
+  ];
 
   return (
     <div
       style={{
-        width: 260,
-        background: "rgba(0,0,0,0.25)",
-        padding: 20,
-        borderRadius: 16,
-        overflowY: "auto",
+        height: "100%",
+        padding: 16,
         display: "flex",
         flexDirection: "column",
-        gap: 12,
+        color: "white",
+        overflow: "hidden"
       }}
     >
-      <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "white", marginBottom: 8 }}>
-        VIDENSBANK FILER
+      <div
+        style={{
+          fontSize: "0.8rem",
+          opacity: 0.7,
+          letterSpacing: "0.07em",
+          marginBottom: 12
+        }}
+      >
+        Vidensbank
       </div>
 
-      {files.map((f) => (
-        <div
-          key={f.id}
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            borderRadius: 12,
-            padding: "10px 12px",
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-          }}
-        >
-          <div style={{ fontSize: "1rem", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: "1.3rem" }}>{getIcon(f.mimeType)}</span>
-            {f.name}
+      <div style={{ flex: 1, overflowY: "auto", paddingRight: 6 }}>
+        {mockFiles.map((f, i) => (
+          <div
+            key={i}
+            style={{
+              padding: "10px 12px",
+              background: "rgba(255,255,255,0.06)",
+              borderRadius: 10,
+              marginBottom: 10,
+              display: "flex",
+              gap: 10,
+              alignItems: "center"
+            }}
+          >
+            <span style={{ fontSize: 20 }}>📄</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600 }}>{f.name}</div>
+              <div style={{ opacity: 0.7, fontSize: "0.75rem" }}>
+                {f.type}
+              </div>
+            </div>
           </div>
-
-          <div style={{ opacity: 0.6, fontSize: "0.85rem" }}>
-            {shortMime(f.mimeType)}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
