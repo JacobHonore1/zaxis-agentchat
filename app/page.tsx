@@ -19,8 +19,7 @@ export default function HomePage() {
   async function sendMessage() {
     if (!inputMessage.trim()) return;
 
-    // Typesafe brugerbesked
-    const userMsg: { role: "user"; content: string } = {
+    const userMsg: ChatMessage = {
       role: "user",
       content: inputMessage,
     };
@@ -40,18 +39,20 @@ export default function HomePage() {
 
       const data = await res.json();
 
-      const assistantMsg: { role: "assistant"; content: string } = {
+      const assistantMsg: ChatMessage = {
         role: "assistant",
         content: data.reply || "Intet svar modtaget",
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
-      const assistantErrorMsg: { role: "assistant"; content: string } = {
-        role: "assistant",
-        content: "Der opstod en fejl i kommunikationen med serveren.",
-      };
-      setMessages((prev) => [...prev, assistantErrorMsg]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Der opstod en fejl i kommunikationen med serveren.",
+        },
+      ]);
     }
 
     setInputMessage("");
@@ -61,20 +62,21 @@ export default function HomePage() {
   return (
     <div
       style={{
-        width: "100vw",
-        height: "100vh",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         display: "flex",
         background: "linear-gradient(180deg, #012230, #013549)",
         overflow: "hidden",
       }}
     >
-      {/* Sidebar med agenter */}
       <AgentSidebar
         currentAgentId={currentAgent}
         onSelectAgent={(id) => setCurrentAgent(id)}
       />
 
-      {/* Chat område */}
       <div
         style={{
           flex: 1,
@@ -82,9 +84,9 @@ export default function HomePage() {
           display: "flex",
           flexDirection: "column",
           gap: 16,
+          overflow: "hidden",
         }}
       >
-        {/* Chat beskeder */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {messages.map((msg, index) => (
             <div
@@ -117,7 +119,6 @@ export default function HomePage() {
             </div>
           ))}
 
-          {/* Loading indikator */}
           {isLoading && (
             <div
               style={{
@@ -131,7 +132,6 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Input-bar */}
         <div
           style={{
             display: "flex",
@@ -174,7 +174,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Vidensbank */}
       <KnowledgeSidebar />
     </div>
   );
