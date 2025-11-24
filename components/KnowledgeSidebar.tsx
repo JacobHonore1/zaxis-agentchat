@@ -1,136 +1,85 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 type DriveFile = {
   id: string;
   name: string;
   mimeType?: string;
-  modifiedTime?: string;
 };
 
 export default function KnowledgeSidebar() {
   const [files, setFiles] = useState<DriveFile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-
-  async function loadFiles() {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/drive-test');
-      if (!res.ok) throw new Error();
-
-      const data = await res.json();
-      const list = Array.isArray(data.files) ? data.files : data;
-
-      setFiles(list);
-      setLastUpdated(new Date().toLocaleTimeString('da-DK'));
-    } catch {
-      setError('Kunne ikke hente filer.');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   useEffect(() => {
+    async function loadFiles() {
+      try {
+        const res = await fetch("/api/drive-files");
+        const data = await res.json();
+        setFiles(data.files || []);
+      } catch (err) {
+        console.error("Fejl ved hentning af vidensbank:", err);
+      }
+    }
+
     loadFiles();
   }, []);
+
+  function extractExtension(fileName: string) {
+    if (!fileName.includes(".")) return "fil";
+    return fileName.split(".").pop()?.toLowerCase() || "fil";
+  }
 
   return (
     <div
       style={{
         width: 260,
-        background: 'linear-gradient(180deg, #022b3a, #04445c)',
-        borderLeft: '1px solid rgba(255,255,255,0.1)',
-        padding: 12,
-        display: 'flex',
-        flexDirection: 'column',
+        background: "rgba(0,0,0,0.30)",
+        borderLeft: "1px solid rgba(255,255,255,0.08)",
+        padding: "20px 12px",
+        overflowY: "auto",
+        color: "white",
       }}
     >
-      <div
+      <h3
         style={{
-          fontSize: '0.8rem',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.6)',
-          marginBottom: 8,
-          letterSpacing: '0.08em',
-        }}
-      >
-        Vidensbank
-      </div>
-
-      <div
-        style={{
-          fontSize: '0.9rem',
+          fontSize: "1.1rem",
           fontWeight: 600,
-          marginBottom: 12,
-          color: '#fff',
+          marginBottom: 16,
+          opacity: 0.9,
         }}
       >
         Google Drive filer
-      </div>
+      </h3>
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading && (
-          <div style={{ color: 'rgba(255,255,255,0.5)' }}>Indlæser filer...</div>
-        )}
+      {files.length === 0 && (
+        <p style={{ opacity: 0.6 }}>Ingen filer fundet…</p>
+      )}
 
-        {error && <div style={{ color: '#ffb3b3' }}>{error}</div>}
+      {files.map((file) => {
+        const ext = extractExtension(file.name);
 
-        {!loading && !error && files.length === 0 && (
-          <div style={{ color: 'rgba(255,255,255,0.6)' }}>Ingen filer fundet.</div>
-        )}
+        return (
+          <div
+            key={file.id}
+            style={{
+              padding: "10px",
+              marginBottom: 10,
+              borderRadius: 8,
+              background: "rgba(255,255,255,0.08)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+            }}
+          >
+            <div style={{ fontSize: "0.95rem" }}>{file.name}</div>
 
-        {!loading && !error && files.length > 0 && (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {files.map((file) => (
-              <li key={file.id} style={{ marginBottom: 10 }}>
-                <div
-                  style={{
-                    fontSize: '0.85rem',
-                    color: '#fff',
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {file.name}
-                </div>
-                <div
-                  style={{
-                    fontSize: '0.7rem',
-                    color: 'rgba(255,255,255,0.6)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <span>{file.mimeType?.split('/')[1] || 'ukendt'}</span>
-                  <span>
-                    {file.modifiedTime
-                      ? new Date(file.modifiedTime).toLocaleDateString('da-DK')
-                      : 'ukendt'}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div
-        style={{
-          borderTop: '1px solid rgba(255,255,255,0.12)',
-          paddingTop: 8,
-          marginTop: 12,
-          fontSize: '0.75rem',
-          color: 'rgba(255,255,255,0.5)',
-        }}
-      >
-        <div>Filer i alt: {files.length}</div>
-        <div>Senest hentet: {lastUpdated ?? 'henter...'}</div>
-      </div>
+            <div style={{ fontSize: "0.8rem", opacity: 0.65 }}>
+              {ext.toUpperCase()}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
