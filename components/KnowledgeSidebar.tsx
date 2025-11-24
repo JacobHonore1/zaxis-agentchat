@@ -1,63 +1,68 @@
-'use client';
+"use client";
 
-type FileItem = {
+import { useEffect, useState } from "react";
+
+type DriveFile = {
+  id: string;
   name: string;
-  type: string;
+  mimeType: string;
 };
 
-export default function KnowledgeSidebar() {
-  const mockFiles: FileItem[] = [
-    { name: "Amanda_Wahle GPT.pdf", type: "PDF" },
-    { name: "Personas.pdf", type: "PDF" },
-    { name: "JE-TRÆ Facadedøre.pdf", type: "PDF" }
-  ];
+export default function KnowledgeSidebar({ onSelectFile }: { onSelectFile: (id: string) => void }) {
+  const [files, setFiles] = useState<DriveFile[]>([]);
+
+  useEffect(() => {
+    async function loadFiles() {
+      const res = await fetch("/api/knowledge");
+      const data = await res.json();
+      setFiles(data.files || []);
+    }
+    loadFiles();
+  }, []);
+
+  function getIcon(mime: string) {
+    if (mime.includes("pdf")) return "📕";
+    if (mime.includes("word") || mime.includes("doc")) return "📘";
+    if (mime.includes("text")) return "📗";
+    if (mime.includes("sheet") || mime.includes("excel")) return "📙";
+    return "📁";
+  }
 
   return (
     <div
       style={{
+        width: "100%",
         height: "100%",
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
         color: "white",
-        overflow: "hidden"
+        padding: "16px",
+        background: "rgba(255,255,255,0.03)",
+        overflowY: "auto",
+        borderRadius: "16px"
       }}
     >
-      <div
-        style={{
-          fontSize: "0.8rem",
-          opacity: 0.7,
-          letterSpacing: "0.07em",
-          marginBottom: 12
-        }}
-      >
-        Vidensbank
-      </div>
+      <h3 style={{ marginBottom: 16 }}>Vidensbank</h3>
 
-      <div style={{ flex: 1, overflowY: "auto", paddingRight: 6 }}>
-        {mockFiles.map((f, i) => (
-          <div
-            key={i}
-            style={{
-              padding: "10px 12px",
-              background: "rgba(255,255,255,0.06)",
-              borderRadius: 10,
-              marginBottom: 10,
-              display: "flex",
-              gap: 10,
-              alignItems: "center"
-            }}
-          >
-            <span style={{ fontSize: 20 }}>📄</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600 }}>{f.name}</div>
-              <div style={{ opacity: 0.7, fontSize: "0.75rem" }}>
-                {f.type}
-              </div>
-            </div>
+      {files.map((file) => (
+        <div
+          key={file.id}
+          onClick={() => onSelectFile(file.id)}
+          style={{
+            padding: "10px",
+            marginBottom: "8px",
+            borderRadius: "10px",
+            background: "rgba(255,255,255,0.06)",
+            cursor: "pointer"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span>{getIcon(file.mimeType)}</span>
+            <strong style={{ fontSize: "0.9rem" }}>{file.name}</strong>
           </div>
-        ))}
-      </div>
+          <div style={{ fontSize: "0.75rem", opacity: 0.7, marginTop: 4 }}>
+            {file.mimeType.split("/")[1] || "fil"}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
