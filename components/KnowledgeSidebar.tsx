@@ -2,12 +2,17 @@
 
 import { DriveFile } from "../types/DriveFile";
 
-const getIconForMime = (mime: string) => {
-  const lower = mime.toLowerCase();
+const getIconForMime = (mime?: string) => {
+  const safe = mime ? mime.toLowerCase() : "";
 
-  if (lower.includes("pdf")) return "📕";
-  if (lower.includes("word") || lower.includes("doc")) return "📘";
-  if (lower.includes("sheet") || lower.includes("excel") || lower.includes("xls"))
+  if (safe.includes("pdf")) return "📕";
+  if (safe.includes("word") || safe.includes("doc")) return "📘";
+  if (
+    safe.includes("sheet") ||
+    safe.includes("excel") ||
+    safe.includes("xls") ||
+    safe.includes("csv")
+  )
     return "📗";
 
   return "📙";
@@ -29,7 +34,14 @@ export default function KnowledgeSidebar({
         overflowY: "auto",
       }}
     >
-      <div style={{ fontSize: "18px", fontWeight: 600, color: "#fff", marginBottom: "16px" }}>
+      <div
+        style={{
+          fontSize: "18px",
+          fontWeight: 600,
+          color: "#fff",
+          marginBottom: "16px",
+        }}
+      >
         Vidensbank
       </div>
 
@@ -47,9 +59,15 @@ export default function KnowledgeSidebar({
             gap: "4px",
           }}
         >
-          <div style={{ fontSize: "20px" }}>{getIconForMime(file.mimeType)}</div>
+          <div style={{ fontSize: "20px" }}>
+            {getIconForMime(file.mimeType)}
+          </div>
           <div style={{ fontSize: "15px", fontWeight: 500 }}>{file.name}</div>
-          <div style={{ fontSize: "12px", opacity: 0.8 }}>filtype</div>
+
+          {/* viser nu korrekt filtype */}
+          <div style={{ fontSize: "12px", opacity: 0.8 }}>
+            {file.mimeType ? file.mimeType : "ukendt"}
+          </div>
         </div>
       ))}
     </div>
