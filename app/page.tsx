@@ -4,17 +4,11 @@ import { useState } from "react";
 import AgentSidebar from "../components/AgentSidebar";
 import KnowledgeSidebar from "../components/KnowledgeSidebar";
 import { AgentId, defaultAgentId } from "../config/agents";
+import { DriveFile } from "../types/DriveFile";
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
-};
-
-type DriveFile = {
-  id: string;
-  name: string;
-  mimeType: string;
-  text?: string;
 };
 
 export default function HomePage() {
@@ -29,10 +23,10 @@ export default function HomePage() {
 
     const userMsg: ChatMessage = {
       role: "user",
-      content: inputMessage,
+      content: inputMessage
     };
 
-    setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
     try {
@@ -42,24 +36,23 @@ export default function HomePage() {
         body: JSON.stringify({
           message: inputMessage,
           agent: currentAgent,
-          file: selectedFile, // hele filobjektet sendes med
-        }),
+          file: selectedFile
+        })
       });
 
       const data = await res.json();
 
       const assistantMsg: ChatMessage = {
         role: "assistant",
-        content: data.reply || "Intet svar modtaget",
+        content: data.reply || "Intet svar modtaget"
       };
 
-      setMessages((prev: ChatMessage[]) => [...prev, assistantMsg]);
-    } catch (err) {
-      const assistantErrorMsg: ChatMessage = {
-        role: "assistant",
-        content: "Der opstod en fejl i kommunikationen med serveren.",
-      };
-      setMessages((prev: ChatMessage[]) => [...prev, assistantErrorMsg]);
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Der opstod en serverfejl." }
+      ]);
     }
 
     setInputMessage("");
@@ -71,15 +64,14 @@ export default function HomePage() {
       style={{
         width: "100vw",
         height: "100vh",
-        background: "#002233",            // mørk baggrund over hele skærmen
+        background: "#002233",
         display: "flex",
-        padding: "20px",                  // padding i sider, top, bund
+        padding: "20px",
         boxSizing: "border-box",
-        overflow: "hidden",               // ingen scroll på selve browseren
-        gap: "20px",
+        overflow: "hidden",
+        gap: "20px"
       }}
     >
-      {/* Venstre sidebar – AI agenter */}
       <div style={{ width: "260px", height: "100%" }}>
         <AgentSidebar
           currentAgentId={currentAgent}
@@ -87,7 +79,6 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Chat midten */}
       <div
         style={{
           flex: 1,
@@ -96,15 +87,14 @@ export default function HomePage() {
           borderRadius: "16px",
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",             // kun scroll inde i besked-listen
+          overflow: "hidden"
         }}
       >
-        {/* Beskeder med scroll */}
         <div
           style={{
             flex: 1,
             overflowY: "auto",
-            paddingRight: 10,
+            paddingRight: 10
           }}
         >
           {messages.map((msg, index) => (
@@ -121,14 +111,14 @@ export default function HomePage() {
                     : "rgba(0,0,0,0.25)",
                 padding: 12,
                 borderRadius: 10,
-                color: "white",
+                color: "white"
               }}
             >
               <strong
                 style={{
                   fontSize: "0.8rem",
                   marginBottom: 6,
-                  opacity: 0.8,
+                  opacity: 0.8
                 }}
               >
                 {msg.role === "user" ? "Bruger" : "Assistent"}
@@ -139,26 +129,13 @@ export default function HomePage() {
           ))}
 
           {isLoading && (
-            <div
-              style={{
-                marginTop: 10,
-                fontStyle: "italic",
-                color: "rgba(255,255,255,0.6)",
-              }}
-            >
+            <div style={{ marginTop: 10, fontStyle: "italic", color: "white" }}>
               Assistenten skriver…
             </div>
           )}
         </div>
 
-        {/* Inputlinje */}
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            paddingTop: 10,
-          }}
-        >
+        <div style={{ display: "flex", gap: 12, paddingTop: 10 }}>
           <input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
@@ -169,7 +146,7 @@ export default function HomePage() {
               padding: "12px",
               borderRadius: 8,
               border: "none",
-              outline: "none",
+              outline: "none"
             }}
           />
 
@@ -183,7 +160,7 @@ export default function HomePage() {
               cursor: "pointer",
               background: isLoading ? "gray" : "#0af",
               color: "white",
-              fontWeight: 600,
+              fontWeight: 600
             }}
           >
             Send
@@ -191,7 +168,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Vidensbank kolonne */}
       <div style={{ width: "300px", height: "100%" }}>
         <KnowledgeSidebar onSelectFile={(file) => setSelectedFile(file)} />
       </div>
