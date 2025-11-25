@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-type DriveFile = {
-  id: string;
-  name: string;
-  mimeType?: string;
-  text?: string;
-};
+import { DriveFile } from "../types/DriveFile";
 
 export default function KnowledgeSidebar({
   onSelectFile
@@ -30,15 +24,12 @@ export default function KnowledgeSidebar({
   }, []);
 
   function getIcon(mime?: string) {
-    if (!mime) return "📁"; // fallback
-
+    if (!mime) return "📁";
     const lower = mime.toLowerCase();
-
     if (lower.includes("pdf")) return "📕";
     if (lower.includes("word") || lower.includes("doc")) return "📘";
     if (lower.includes("text")) return "📗";
     if (lower.includes("sheet") || lower.includes("excel")) return "📙";
-
     return "📁";
   }
 
@@ -65,11 +56,16 @@ export default function KnowledgeSidebar({
             marginBottom: "8px",
             borderRadius: "10px",
             background: "rgba(255,255,255,0.06)",
-            cursor: "pointer",
-            transition: "background 0.2s"
+            cursor: "pointer"
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8
+            }}
+          >
             <span>{getIcon(file.mimeType)}</span>
             <strong style={{ fontSize: "0.9rem" }}>{file.name}</strong>
           </div>
