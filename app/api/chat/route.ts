@@ -1,23 +1,23 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { DriveFile } from "../../../types/DriveFile";
 
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 export async function POST(req: Request) {
   try {
-    const { message, agent, file } = await req.json();
+    const { message, agent, file }: { message: string; agent: string; file?: DriveFile } =
+      await req.json();
 
     let systemPrompt = "Du er en hjælpsom assistent.";
-
-    // Tilføj dokumenttekst hvis der er valgt en fil
     let fileContext = "";
 
-    if (file && file.text) {
+    if (file?.text) {
       fileContext =
-        `Her er relevant kontekst hentet fra dokumentet "${file.name}":\n\n` +
-        file.text.slice(0, 12000) + // god grænse til at undgå for lange prompts
+        `Her er kontekst fra dokumentet "${file.name}":\n\n` +
+        file.text.slice(0, 12000) +
         "\n\n---\n\n";
     }
 
@@ -27,12 +27,12 @@ export async function POST(req: Request) {
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: prompt },
-      ],
+        { role: "user", content: prompt }
+      ]
     });
 
     return NextResponse.json({
-      reply: completion.choices[0].message.content,
+      reply: completion.choices[0].message.content
     });
   } catch (err: any) {
     console.error("CHAT API FEJL:", err);
