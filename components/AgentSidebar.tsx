@@ -1,65 +1,79 @@
 "use client";
 
-import { AGENTS } from "../data/agents";
 import { useState } from "react";
+import { AGENTS, AgentConfig } from "../data/agents";
 
 export default function AgentSidebar() {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [activeAgent, setActiveAgent] = useState<string>("linkedin");
 
   return (
     <div
       style={{
         width: "100%",
         height: "100%",
-        overflowY: "auto",
-        paddingRight: "6px",
+        background: "rgba(0,0,0,0.18)",
+        borderRadius: "12px",
+        padding: "20px",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        color: "white",
       }}
     >
-      <h3
+      {/* Header */}
+      <div
         style={{
+          marginBottom: "16px",
+          fontSize: "18px",
+          fontWeight: 600,
           color: "white",
-          fontSize: "16px",
-          marginBottom: "12px",
-          opacity: 0.85,
         }}
       >
         Assistenter
-      </h3>
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        {Object.values(AGENTS).map((agent) => {
-          const isActive = selected === agent.id;
+      {/* Scrollable list */}
+      <div
+        style={{
+          overflowY: "auto",
+          paddingRight: "6px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+        }}
+      >
+        {Object.values(AGENTS).map((agent: AgentConfig) => {
+          const isActive = agent.id === activeAgent;
 
           return (
             <div
               key={agent.id}
-              onClick={() => setSelected(agent.id)}
+              onClick={() => setActiveAgent(agent.id)}
               style={{
-                padding: "14px",
-                borderRadius: "12px",
-                cursor: "pointer",
                 background: isActive
-                  ? "rgba(0, 140, 180, 0.45)"
-                  : "rgba(255,255,255,0.08)",
-                boxShadow: isActive
-                  ? "0 0 10px rgba(0,140,180,0.4)"
-                  : "0 0 6px rgba(0,0,0,0.3)",
-                border: isActive
-                  ? "1px solid rgba(0,180,220,0.5)"
-                  : "1px solid transparent",
+                  ? "rgba(0,120,160,0.45)"
+                  : "rgba(255,255,255,0.06)",
+                border: isActive ? "1px solid #00aaff" : "1px solid transparent",
+                borderRadius: "10px",
+                padding: "14px",
+                cursor: "pointer",
+                display: "flex",
+                gap: "12px",
+                transition: "0.2s",
               }}
             >
-              <div style={{ fontSize: "18px" }}>{agent.icon}</div>
-              <strong style={{ color: "white", fontSize: "15px" }}>
-                {agent.name}
-              </strong>
-              <div style={{ color: "#cfd8dc", fontSize: "13px" }}>
-                {agent.description}
+              {/* Icon */}
+              <div
+                style={{
+                  fontSize: "22px",
+                  width: "28px",
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                {agent.icon}
               </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+
+              {/* Text */}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <strong style={{ marginBottom: "4px" }}>{agent.name}</strong>
