@@ -62,32 +62,31 @@ export default function HomePage() {
   return (
     <div
       style={{
-        width: "100vw",
-        height: "100vh",
-        background: "#002233",
+        width: "100%",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         paddingTop: "10px",
-        boxSizing: "border-box",
-        overflow: "hidden",
+        boxSizing: "border-box"
       }}
     >
 
-      {/* TOPBAR */}
+      {/* Topbar */}
       <div
+        className="topbar"
         style={{
           width: "1200px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "10px 20px",
-          marginBottom: "10px",
+          padding: "14px 20px",
+          marginBottom: "14px",
           background: "rgba(255,255,255,0.08)",
           borderRadius: "10px",
           color: "white",
           fontSize: "1.2rem",
-          fontWeight: 600,
+          fontWeight: 600
         }}
       >
         <span>Virtoo Assistent MVP 0.13a</span>
@@ -97,57 +96,54 @@ export default function HomePage() {
           style={{
             background: "rgba(255,255,255,0.15)",
             color: "white",
-            padding: "6px 14px",
+            padding: "8px 16px",
             borderRadius: "8px",
             border: "none",
             cursor: "pointer",
-            fontWeight: 600,
+            fontWeight: 600
           }}
         >
           Reset chat
         </button>
       </div>
 
-      {/* MAIN WORKSPACE */}
+      {/* Workspace */}
       <div
+        className="workspace"
         style={{
           width: "1200px",
-          height: "calc(100vh - 90px)",
+          height: "calc(100vh - 120px)",
           display: "flex",
           gap: "20px",
+          overflow: "hidden"
         }}
       >
-        {/* AGENT SIDEBAR */}
-        <div
-          style={{
-            width: "260px",
-            height: "100%",
-          }}
-        >
+
+        {/* Venstre sidebar */}
+        <div className="sidebar-left panel" style={{ width: "260px", height: "100%" }}>
           <AgentSidebar
             currentAgentId={currentAgent}
             onSelectAgent={(id) => setCurrentAgent(id)}
           />
         </div>
 
-        {/* CHAT PANEL */}
+        {/* Chat panel */}
         <div
+          className="chat-panel panel"
           style={{
             flex: 1,
-            background: "linear-gradient(180deg, #012230, #013549)",
             padding: "20px",
-            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
+            background: "linear-gradient(180deg, #012230, #013549)"
           }}
         >
-          {/* MESSAGES */}
           <div
             style={{
               flex: 1,
               overflowY: "auto",
-              paddingRight: 10,
+              paddingRight: 10
             }}
           >
             {messages.map((msg, index) => (
@@ -157,21 +153,21 @@ export default function HomePage() {
                   marginBottom: 12,
                   display: "flex",
                   flexDirection: "column",
-                  maxWidth: "70%",
+                  maxWidth: "80%",
                   background:
                     msg.role === "user"
                       ? "rgba(255,255,255,0.12)"
                       : "rgba(0,0,0,0.25)",
                   padding: 12,
                   borderRadius: 10,
-                  color: "white",
+                  color: "white"
                 }}
               >
                 <strong
                   style={{
                     fontSize: "0.8rem",
                     marginBottom: 6,
-                    opacity: 0.8,
+                    opacity: 0.8
                   }}
                 >
                   {msg.role === "user" ? "Bruger" : "Assistent"}
@@ -186,7 +182,7 @@ export default function HomePage() {
                 style={{
                   marginTop: 10,
                   fontStyle: "italic",
-                  color: "rgba(255,255,255,0.6)",
+                  color: "rgba(255,255,255,0.6)"
                 }}
               >
                 Assistenten skriver…
@@ -194,14 +190,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* INPUT */}
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              paddingTop: 10,
-            }}
-          >
+          <div style={{ display: "flex", gap: 12, paddingTop: 10 }}>
             <input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
@@ -212,7 +201,7 @@ export default function HomePage() {
                 padding: "12px",
                 borderRadius: 8,
                 border: "none",
-                outline: "none",
+                outline: "none"
               }}
             />
 
@@ -226,7 +215,7 @@ export default function HomePage() {
                 cursor: "pointer",
                 background: isLoading ? "gray" : "#0af",
                 color: "white",
-                fontWeight: 600,
+                fontWeight: 600
               }}
             >
               Send
@@ -234,8 +223,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* KNOWLEDGE SIDEBAR */}
-        <div style={{ width: "300px", height: "100%" }}>
+        {/* Vidensbank */}
+        <div className="sidebar-right panel" style={{ width: "300px", height: "100%" }}>
           <KnowledgeSidebar onSelectFile={(file) => setSelectedFile(file)} />
         </div>
       </div>
