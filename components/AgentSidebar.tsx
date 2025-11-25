@@ -1,6 +1,6 @@
 "use client";
 
-import { AgentId } from "../config/agents";
+import { AgentId, agents } from "../config/agents";
 
 export default function AgentSidebar({
   currentAgentId,
@@ -9,21 +9,6 @@ export default function AgentSidebar({
   currentAgentId: AgentId;
   onSelectAgent: (id: AgentId) => void;
 }) {
-  const agents = [
-    {
-      id: "linkedin",
-      name: "LinkedIn Skribent",
-      description: "Skriver stærke LinkedIn opslag og optimerer tekst.",
-      icon: "✏️",
-    },
-    {
-      id: "business",
-      name: "Business Agent",
-      description: "Forretningsanalyse og rådgivning.",
-      icon: "📊",
-    },
-  ];
-
   return (
     <div
       style={{
@@ -32,15 +17,15 @@ export default function AgentSidebar({
         background: "rgba(255,255,255,0.04)",
         borderRadius: 16,
         padding: 20,
+        color: "white",
         display: "flex",
         flexDirection: "column",
-        color: "white",
       }}
     >
       <h3
         style={{
-          marginBottom: 20,
           marginTop: 0,
+          marginBottom: 20,
           fontSize: "1rem",
           fontWeight: 600,
           opacity: 0.9,
@@ -56,32 +41,50 @@ export default function AgentSidebar({
           return (
             <div
               key={agent.id}
-              onClick={() => onSelectAgent(agent.id as AgentId)}
+              onClick={() => onSelectAgent(agent.id)}
               style={{
+                padding: 14,
+                borderRadius: 12,
+                cursor: "pointer",
                 background: isActive
                   ? "rgba(56,189,248,0.25)"
-                  : "rgba(255,255,255,0.06)",
-                borderRadius: 12,
-                padding: 14,
-                cursor: "pointer",
-                transition: "0.2s",
+                  : "rgba(255,255,255,0.07)",
                 boxShadow: isActive
-                  ? "0 0 8px rgba(56,189,248,0.4)"
-                  : "0 0 0 transparent",
+                  ? "0 0 10px rgba(56,189,248,0.4)"
+                  : "none",
+                transition: "0.15s",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: "1.4rem" }}>{agent.icon}</span>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "999px",
+                    background: "rgba(0,0,0,0.25)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 18,
+                  }}
+                >
+                  {agent.icon || "🤖"}
+                </div>
                 <div>
-                  <strong style={{ fontSize: "0.95rem", display: "block" }}>
+                  <strong
+                    style={{
+                      fontSize: "0.95rem",
+                      display: "block",
+                    }}
+                  >
                     {agent.name}
                   </strong>
                   <span
                     style={{
-                      opacity: 0.7,
                       fontSize: "0.78rem",
+                      opacity: 0.7,
                       display: "block",
-                      marginTop: 3,
+                      marginTop: 2,
                     }}
                   >
                     {agent.description}
