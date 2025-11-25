@@ -61,6 +61,7 @@ export default function KnowledgeSidebar({
       </h3>
 
       <div
+        className="scroll-area"
         style={{
           flex: 1,
           overflowY: "auto",
