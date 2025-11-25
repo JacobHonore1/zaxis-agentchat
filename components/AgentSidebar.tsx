@@ -13,7 +13,9 @@ export default function AgentSidebar() {
         display: "flex",
         flexDirection: "column",
         padding: 20,
-        overflowY: "auto", // kun scroll inde i panelet
+        overflowY: "auto",
+        background: "rgba(0,0,0,0.20)", // MATCH CHAT PANE
+        borderRadius: "14px",
       }}
     >
       <div
