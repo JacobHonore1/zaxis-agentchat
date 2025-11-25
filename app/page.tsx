@@ -53,7 +53,8 @@ export default function HomePage() {
         ...prev,
         {
           role: "assistant",
-          content: "Der opstod en fejl i kommunikationen med serveren.",
+          content:
+            "Der opstod en fejl i kommunikationen med serveren. Prøv igen.",
         },
       ]);
     }
@@ -81,7 +82,7 @@ export default function HomePage() {
         flexDirection: "column",
       }}
     >
-      {/* Global reset til html/body for at fjerne hvide kanter og browser-scrollbar */}
+      {/* Global reset for html/body og scrollbars */}
       <style>
         {`
           html, body {
@@ -90,6 +91,17 @@ export default function HomePage() {
             overflow: hidden;
             background: #002233;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          }
+
+          .scroll-area::-webkit-scrollbar {
+            width: 6px;
+          }
+          .scroll-area::-webkit-scrollbar-thumb {
+            background: rgba(0, 150, 200, 0.4);
+            border-radius: 10px;
+          }
+          .scroll-area::-webkit-scrollbar-track {
+            background: transparent;
           }
         `}
       </style>
@@ -123,7 +135,7 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* 3 kolonner */}
+      {/* Hovedlayout tre kolonner */}
       <div
         style={{
           flex: 1,
@@ -132,7 +144,7 @@ export default function HomePage() {
           height: "100%",
         }}
       >
-        {/* Venstre – assistenter */}
+        {/* Venstre kolonne */}
         <div style={{ width: 260, height: "100%" }}>
           <AgentSidebar
             currentAgentId={currentAgent}
@@ -140,7 +152,7 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Midten – chat */}
+        {/* Chat midte */}
         <div
           style={{
             flex: 1,
@@ -152,8 +164,9 @@ export default function HomePage() {
             overflow: "hidden",
           }}
         >
-          {/* Beskeder med intern scroll */}
+          {/* Beskeder */}
           <div
+            className="scroll-area"
             style={{
               flex: 1,
               overflowY: "auto",
@@ -204,7 +217,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Inputlinje */}
+          {/* Inputfelt */}
           <div
             style={{
               display: "flex",
@@ -245,7 +258,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Højre – vidensbank */}
+        {/* Vidensbank */}
         <div style={{ width: 300, height: "100%" }}>
           <KnowledgeSidebar
             selectedFileId={selectedFile?.id ?? null}
