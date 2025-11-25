@@ -1,6 +1,6 @@
 "use client";
 
-import { DriveFile } from "../types";
+import { DriveFile } from "../types/drive";
 
 export default function KnowledgeSidebar({
   files = [],
