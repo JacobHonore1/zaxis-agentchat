@@ -10,11 +10,19 @@ type ChatMessage = {
   content: string;
 };
 
+type DriveFile = {
+  id: string;
+  name: string;
+  mimeType: string;
+  text?: string;
+};
+
 export default function HomePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [currentAgent, setCurrentAgent] = useState<AgentId>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
 
   async function sendMessage() {
     if (!inputMessage.trim()) return;
@@ -34,6 +42,7 @@ export default function HomePage() {
         body: JSON.stringify({
           message: inputMessage,
           agent: currentAgent,
+          file: selectedFile, // hele filobjektet sendes med
         }),
       });
 
@@ -182,10 +191,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Vidensbank – højre kolonne */}
+      {/* Vidensbank kolonne */}
       <div style={{ width: "300px", height: "100%" }}>
-        {/* tom handler – du kan senere bruge fileId her */}
-        <KnowledgeSidebar onSelectFile={(_id: string) => {}} />
+        <KnowledgeSidebar onSelectFile={(file) => setSelectedFile(file)} />
       </div>
     </div>
   );
