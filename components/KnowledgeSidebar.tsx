@@ -30,13 +30,31 @@ export default function KnowledgeSidebar({
     const lower = mime.toLowerCase();
     if (lower.includes("pdf")) return "📕";
     if (lower.includes("doc") || lower.includes("word")) return "📘";
-    if (lower.includes("text") || lower.includes("plain")) return "📗";
+    if (lower.includes("text")) return "📗";
     return "📁";
   }
 
   return (
-    <div style={{ width: "100%", height: "100%", overflowY: "auto" }}>
-      <h3 style={{ marginBottom: 12 }}>Google Drive filer</h3>
+    <div
+      className="scroll-area"
+      style={{
+        width: "100%",
+        height: "100%",
+        paddingRight: 4,
+      }}
+    >
+      {/* MATCHER ASSISTENTER-STIL */}
+      <h3
+        style={{
+          fontSize: "1rem",
+          fontWeight: 600,
+          marginBottom: 16,
+          color: "white",
+          opacity: 0.9,
+        }}
+      >
+        Vidensbank
+      </h3>
 
       {files.map((file) => {
         const isSelected = file.id === selectedFileId;
@@ -46,8 +64,8 @@ export default function KnowledgeSidebar({
             key={file.id}
             onClick={() => onSelectFile(file)}
             style={{
-              padding: 10,
-              marginBottom: 8,
+              padding: 12,
+              marginBottom: 10,
               borderRadius: 12,
               cursor: "pointer",
               background: isSelected
@@ -59,16 +77,33 @@ export default function KnowledgeSidebar({
               transition: "0.15s",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>{getIcon(file.mimeType)}</span>
-              <strong>{file.name}</strong>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span style={{ fontSize: "1.2rem" }}>{getIcon(file.mimeType)}</span>
+
+              {/* FILNAVNE – HVID TEXT SAMME STØRRELSE SOM ASSISTENTER */}
+              <strong
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  color: "white",
+                }}
+              >
+                {file.name}
+              </strong>
             </div>
 
             <div
               style={{
                 fontSize: "0.75rem",
-                opacity: 0.6,
-                marginTop: 2,
+                opacity: 0.5,
+                marginTop: 4,
+                color: "white",
               }}
             >
               {file.mimeType?.split("/")[1] || "ukendt"}
