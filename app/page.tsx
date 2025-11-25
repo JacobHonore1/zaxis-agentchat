@@ -16,6 +16,8 @@ export default function HomePage() {
   const [inputMessage, setInputMessage] = useState("");
   const [currentAgent, setCurrentAgent] = useState<AgentId>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Markeret dokument
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
 
   async function sendMessage() {
@@ -84,7 +86,7 @@ export default function HomePage() {
       <div
         style={{
           width: "100%",
-          maxWidth: 1400,
+          maxWidth: 1600,
           height: "100%",
           display: "flex",
           flexDirection: "column",
@@ -98,7 +100,7 @@ export default function HomePage() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            padding: "4px 4px",
+            padding: "4px 8px",
           }}
         >
           <h2
@@ -126,121 +128,129 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Hovedlayout */}
-        <div className="workspace">
-          {/* Venstre panel med agenter */}
-          <div className="sidebar-left app-panel">
-            <div style={{ padding: 16, height: "100%" }}>
-              <AgentSidebar
-                currentAgentId={currentAgent}
-                onSelectAgent={(id) => setCurrentAgent(id)}
-              />
-            </div>
+        {/* Tre kolonner */}
+        <div
+          style={{
+            display: "flex",
+            gap: 20,
+            flex: 1,
+            height: "100%",
+          }}
+        >
+          {/* Venstre kolonne */}
+          <div
+            style={{
+              width: 260,
+              height: "100%",
+              background: "rgba(255,255,255,0.06)",
+              borderRadius: 16,
+              padding: 16,
+            }}
+          >
+            <AgentSidebar
+              currentAgentId={currentAgent}
+              onSelectAgent={(id) => setCurrentAgent(id)}
+            />
           </div>
 
           {/* Chat midte */}
-          <div className="chat-column app-panel">
+          <div
+            style={{
+              flex: 1,
+              height: "100%",
+              background: "linear-gradient(180deg,#012230,#013549)",
+              borderRadius: 16,
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            {/* Beskeder */}
             <div
               style={{
-                height: "100%",
-                padding: 20,
-                display: "flex",
-                flexDirection: "column",
-                background: "linear-gradient(180deg,#012230,#013549)",
-                borderRadius: 16,
+                flex: 1,
+                overflowY: "auto",
+                paddingRight: 10,
               }}
             >
-              {/* Beskeder */}
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  paddingRight: 10,
-                }}
-              >
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      marginBottom: 12,
-                      padding: 12,
-                      borderRadius: 10,
-                      maxWidth: "70%",
-                      background:
-                        msg.role === "user"
-                          ? "rgba(255,255,255,0.12)"
-                          : "rgba(0,0,0,0.25)",
-                      color: "white",
-                    }}
-                  >
-                    <strong
-                      style={{
-                        fontSize: "0.8rem",
-                        opacity: 0.7,
-                      }}
-                    >
-                      {msg.role === "user" ? "Bruger" : "Assistent"}
-                    </strong>
-                    <div style={{ marginTop: 6 }}>{msg.content}</div>
-                  </div>
-                ))}
-
-                {isLoading && (
-                  <div
-                    style={{
-                      marginTop: 10,
-                      fontStyle: "italic",
-                      color: "rgba(255,255,255,0.6)",
-                    }}
-                  >
-                    Assistenten skriver …
-                  </div>
-                )}
-              </div>
-
-              {/* Input */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  paddingTop: 10,
-                }}
-              >
-                <input
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  placeholder="Skriv din besked"
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
                   style={{
-                    flex: 1,
+                    marginBottom: 12,
                     padding: 12,
-                    borderRadius: 8,
-                    border: "none",
-                    outline: "none",
-                  }}
-                />
-
-                <button
-                  onClick={sendMessage}
-                  disabled={isLoading}
-                  style={{
-                    padding: "10px 18px",
-                    borderRadius: 8,
-                    border: "none",
-                    cursor: "pointer",
-                    background: isLoading ? "gray" : "#0af",
+                    borderRadius: 10,
+                    maxWidth: "70%",
+                    background:
+                      msg.role === "user"
+                        ? "rgba(255,255,255,0.12)"
+                        : "rgba(0,0,0,0.25)",
                     color: "white",
-                    fontWeight: 600,
                   }}
                 >
-                  Send
-                </button>
-              </div>
+                  <strong
+                    style={{
+                      fontSize: "0.8rem",
+                      opacity: 0.7,
+                    }}
+                  >
+                    {msg.role === "user" ? "Bruger" : "Assistent"}
+                  </strong>
+                  <div style={{ marginTop: 6 }}>{msg.content}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Input */}
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                paddingTop: 10,
+              }}
+            >
+              <input
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Skriv din besked…"
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  borderRadius: 8,
+                  border: "none",
+                }}
+              />
+
+              <button
+                onClick={sendMessage}
+                disabled={isLoading}
+                style={{
+                  padding: "12px 20px",
+                  background: "#0af",
+                  color: "white",
+                  borderRadius: 8,
+                  border: "none",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Send
+              </button>
             </div>
           </div>
 
-          {/* Højre panel vidensbank */}
-          <div className="sidebar-right app-panel">
+          {/* Vidensbank */}
+          <div
+            style={{
+              width: 300,
+              height: "100%",
+              background: "rgba(255,255,255,0.06)",
+              borderRadius: 16,
+              padding: 16,
+            }}
+          >
             <KnowledgeSidebar
               onSelectFile={(file) => setSelectedFile(file)}
               selectedFileId={selectedFile?.id || null}
