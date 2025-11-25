@@ -35,7 +35,6 @@ export default function Page() {
         fontFamily: "Inter, sans-serif",
       }}
     >
-      {/* Top bar */}
       <div
         style={{
           padding: "20px 40px",
@@ -64,7 +63,6 @@ export default function Page() {
         </button>
       </div>
 
-      {/* 3-column layout */}
       <div
         style={{
           flex: 1,
@@ -76,17 +74,34 @@ export default function Page() {
         }}
       >
         {/* Agent Sidebar */}
-        <div style={{ width: "320px", flexShrink: 0 }}>
-          <AgentSidebar />
+        <div
+          style={{
+            width: "320px",
+            height: "100%",
+            flexShrink: 0,
+            display: "flex",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              overflow: "hidden",
+              borderRadius: "14px",
+              background: "rgba(0, 0, 0, 0.25)",
+            }}
+          >
+            <AgentSidebar />
+          </div>
         </div>
 
         {/* Chat Pane */}
         <div
           style={{
             flex: 1,
+            height: "100%",
             borderRadius: "14px",
             overflow: "hidden",
-            background: "rgba(0,0,0,0.20)",
+            background: "rgba(0,0,0,0.2)",
             display: "flex",
             flexDirection: "column",
           }}
@@ -95,8 +110,24 @@ export default function Page() {
         </div>
 
         {/* Knowledge Sidebar */}
-        <div style={{ width: "360px", flexShrink: 0 }}>
-          <KnowledgeSidebar files={files} />
+        <div
+          style={{
+            width: "360px",
+            height: "100%",
+            flexShrink: 0,
+            display: "flex",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              overflow: "hidden",
+              borderRadius: "14px",
+              background: "rgba(0,0,0,0.25)",
+            }}
+          >
+            <KnowledgeSidebar files={files} />
+          </div>
         </div>
       </div>
     </div>
