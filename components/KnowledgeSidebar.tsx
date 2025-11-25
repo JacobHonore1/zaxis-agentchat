@@ -23,14 +23,25 @@ export default function KnowledgeSidebar() {
     loadFiles();
   }, []);
 
-  function getIcon(mime?: string) {
-    if (!mime) return "📁";
+  // farvede ikoner
+  function getColoredIcon(mime?: string) {
+    if (!mime) return <span style={{ fontSize: 20, color: "#ffeb3b" }}>📁</span>;
+
     const m = mime.toLowerCase();
-    if (m.includes("pdf")) return "📕";
-    if (m.includes("doc")) return "📘";
-    if (m.includes("sheet") || m.includes("xls")) return "📗";
-    if (m.includes("text") || m.includes("txt")) return "📄";
-    return "📁";
+
+    if (m.includes("pdf"))
+      return <span style={{ fontSize: 20, color: "#ff4b4b" }}>📕</span>;
+
+    if (m.includes("doc"))
+      return <span style={{ fontSize: 20, color: "#4ba3ff" }}>📘</span>;
+
+    if (m.includes("sheet") || m.includes("xls"))
+      return <span style={{ fontSize: 20, color: "#4bff7b" }}>📗</span>;
+
+    if (m.includes("text") || m.includes("txt"))
+      return <span style={{ fontSize: 20, color: "#ffeb3b" }}>📄</span>;
+
+    return <span style={{ fontSize: 20, color: "#ffeb3b" }}>📁</span>;
   }
 
   return (
@@ -40,7 +51,7 @@ export default function KnowledgeSidebar() {
         display: "flex",
         flexDirection: "column",
         padding: 20,
-        overflowY: "auto", // kun scroll inde i panelet
+        overflowY: "auto",
       }}
     >
       <div
@@ -81,7 +92,9 @@ export default function KnowledgeSidebar() {
               alignItems: "flex-start",
             }}
           >
-            <div style={{ fontSize: 20 }}>{getIcon(file.mimeType)}</div>
+            {/* farvet ikon */}
+            {getColoredIcon(file.mimeType)}
+
             <div style={{ display: "flex", flexDirection: "column" }}>
               <strong
                 style={{
@@ -93,6 +106,7 @@ export default function KnowledgeSidebar() {
               >
                 {file.name}
               </strong>
+
               <span
                 style={{
                   color: "#c7d4dd",
@@ -100,7 +114,7 @@ export default function KnowledgeSidebar() {
                   opacity: 0.8,
                 }}
               >
-                {file.mimeType || "ukendt filtype"}
+                {file.mimeType || "filtype"}
               </span>
             </div>
           </div>
