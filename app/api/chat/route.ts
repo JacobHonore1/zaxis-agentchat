@@ -7,9 +7,8 @@ export async function POST(req: Request) {
     const message = body.message || "";
     const requestedFile = body.requestedFile || null;
 
-    let fileInput = null;
+    let fileInput: any = null;
 
-    // Hvis brugeren bad om en fil → hent binary data
     if (requestedFile?.id) {
       try {
         const credentials = JSON.parse(process.env.GOOGLE_SERVICE_KEY || "{}");
@@ -21,16 +20,20 @@ export async function POST(req: Request) {
 
         const drive = google.drive({ version: "v3", auth });
 
-        const fileData = await drive.files.get(
+        // Hent rå binær fil – dette virker på Vercel
+        const fileRes = await drive.files.get(
           { fileId: requestedFile.id, alt: "media" },
           { responseType: "arraybuffer" }
         );
+
+        // Konverter binær data til base64
+        const buffer = Buffer.from(fileRes.data as ArrayBuffer);
 
         fileInput = {
           type: "input_file",
           name: requestedFile.name,
           mime_type: requestedFile.mimeType,
-          data: Buffer.from(fileData.data).toString("base64"),
+          data: buffer.toString("base64"),
         };
       } catch (err: any) {
         console.error("Fejl ved filhentning:", err);
@@ -42,7 +45,7 @@ export async function POST(req: Request) {
       {
         role: "system",
         content:
-          "Du er en hjælpsom AI. Hvis en fil er vedhæftet, så skal du bruge indholdet i dit svar.",
+          "Du er en hjælpsom AI. Hvis en fil er vedhæftet, skal du bruge dens indhold.",
       },
     ];
 
@@ -50,10 +53,7 @@ export async function POST(req: Request) {
       messages.push({
         role: "user",
         content: [
-          {
-            type: "input_text",
-            text: `Her er filen "${requestedFile.name}". Læs den og brug indholdet i dit svar.`,
-          },
+          { type: "input_text", text: `Læs venligst denne fil: ${requestedFile.name}` },
           fileInput,
         ],
       });
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       content: message,
     });
 
-    // Kald OpenAI Responses API (ny og korrekt metode)
+    // Send til OpenAI med Responses API
     const openaiRes = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
