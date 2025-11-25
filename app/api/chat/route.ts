@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
-import pdfParse from "pdf-parse";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const userMessage = body.message || "";
+    const message = body.message || "";
     const requestedFile = body.requestedFile || null;
 
-    let fileText = "";
+    let fileInput = null;
 
-    // Hvis brugeren bad om en fil – hent den
+    // Hvis brugeren bad om en fil → hent binary data
     if (requestedFile?.id) {
       try {
         const credentials = JSON.parse(process.env.GOOGLE_SERVICE_KEY || "{}");
@@ -22,67 +21,66 @@ export async function POST(req: Request) {
 
         const drive = google.drive({ version: "v3", auth });
 
-        // Hent binary data
         const fileData = await drive.files.get(
           { fileId: requestedFile.id, alt: "media" },
           { responseType: "arraybuffer" }
         );
 
-        const buffer = Buffer.from(fileData.data as ArrayBuffer);
-
-        // Parse efter filtype
-        if (requestedFile.mimeType.includes("pdf")) {
-          const parsed = await pdfParse(buffer);
-          fileText = parsed.text;
-        } else if (
-          requestedFile.mimeType.includes("msword") ||
-          requestedFile.mimeType.includes("officedocument.wordprocessingml")
-        ) {
-          fileText = "Word-filer understøttes endnu ikke (step C)";
-        } else if (requestedFile.mimeType.includes("csv")) {
-          fileText = buffer.toString("utf-8");
-        } else {
-          fileText = "(Filtype ikke understøttet endnu)";
-        }
+        fileInput = {
+          type: "input_file",
+          name: requestedFile.name,
+          mime_type: requestedFile.mimeType,
+          data: Buffer.from(fileData.data).toString("base64"),
+        };
       } catch (err: any) {
-        fileText = "Fejl ved læsning af fil: " + err.message;
+        console.error("Fejl ved filhentning:", err);
       }
     }
 
-    // Nu genererer vi AI-svar
-    const systemPrompt = `
-Du er en hjælpsom AI-assistent. Hvis der medfølger tekst fra en fil,
-skal du bruge den aktivt i dit svar.
+    // Byg messages til OpenAI
+    const messages: any[] = [
+      {
+        role: "system",
+        content:
+          "Du er en hjælpsom AI. Hvis en fil er vedhæftet, så skal du bruge indholdet i dit svar.",
+      },
+    ];
 
-Hvis der ikke er noget filindhold, svarer du som normalt.
-    `;
+    if (fileInput) {
+      messages.push({
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: `Her er filen "${requestedFile.name}". Læs den og brug indholdet i dit svar.`,
+          },
+          fileInput,
+        ],
+      });
+    }
 
-    // Kald OpenAI Chat Completion
-    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    messages.push({
+      role: "user",
+      content: message,
+    });
+
+    // Kald OpenAI Responses API (ny og korrekt metode)
+    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          fileText
-            ? {
-                role: "system",
-                content: `Her er tekst udtrukket fra den fil brugeren bad om:\n\n${fileText}`,
-              }
-            : null,
-          { role: "user", content: userMessage },
-        ].filter(Boolean),
+        model: "gpt-4.1",
+        messages,
       }),
     });
 
     const data = await openaiRes.json();
 
     return NextResponse.json({
-      reply: data.choices?.[0]?.message?.content || "Intet svar modtaget fra modellen.",
+      reply: data.output_text || "Intet svar modtaget.",
     });
   } catch (err: any) {
     console.error("Chat fejl:", err);
