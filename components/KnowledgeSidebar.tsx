@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { DriveFile } from "../types/DriveFile";
+
+export type DriveFile = {
+  id: string;
+  name: string;
+  mimeType?: string;
+};
 
 export default function KnowledgeSidebar({
   onSelectFile,
@@ -14,13 +19,9 @@ export default function KnowledgeSidebar({
 
   useEffect(() => {
     async function loadFiles() {
-      try {
-        const res = await fetch("/api/drive-files");
-        const data = await res.json();
-        setFiles(data.files || []);
-      } catch (err) {
-        console.error("Fejl ved hentning af filer", err);
-      }
+      const res = await fetch("/api/drive-files");
+      const data = await res.json();
+      setFiles(data.files || []);
     }
     loadFiles();
   }, []);
@@ -40,73 +41,72 @@ export default function KnowledgeSidebar({
       style={{
         width: "100%",
         height: "100%",
-        paddingRight: 4,
+        padding: 20,
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: 16,
+        overflowY: "auto",
       }}
     >
-      {/* MATCHER ASSISTENTER-STIL */}
       <h3
         style={{
+          marginTop: 0,
+          marginBottom: 20,
           fontSize: "1rem",
           fontWeight: 600,
-          marginBottom: 16,
-          color: "white",
           opacity: 0.9,
+          color: "white",
         }}
       >
         Vidensbank
       </h3>
 
       {files.map((file) => {
-        const isSelected = file.id === selectedFileId;
+        const selected = file.id === selectedFileId;
 
         return (
           <div
             key={file.id}
             onClick={() => onSelectFile(file)}
             style={{
-              padding: 12,
-              marginBottom: 10,
+              padding: 14,
+              marginBottom: 12,
               borderRadius: 12,
-              cursor: "pointer",
-              background: isSelected
+              background: selected
                 ? "rgba(56,189,248,0.25)"
                 : "rgba(255,255,255,0.06)",
-              boxShadow: isSelected
-                ? "0 0 10px rgba(56,189,248,0.4)"
+              cursor: "pointer",
+              boxShadow: selected
+                ? "0 0 8px rgba(56,189,248,0.3)"
                 : "none",
-              transition: "0.15s",
+              transition: "0.2s",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: "1.2rem" }}>{getIcon(file.mimeType)}</span>
 
-              {/* FILNAVNE – HVID TEXT SAMME STØRRELSE SOM ASSISTENTER */}
-              <strong
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: 500,
-                  color: "white",
-                }}
-              >
-                {file.name}
-              </strong>
-            </div>
+              <div>
+                <strong
+                  style={{
+                    fontSize: "0.95rem",
+                    color: "white",
+                    display: "block",
+                  }}
+                >
+                  {file.name}
+                </strong>
 
-            <div
-              style={{
-                fontSize: "0.75rem",
-                opacity: 0.5,
-                marginTop: 4,
-                color: "white",
-              }}
-            >
-              {file.mimeType?.split("/")[1] || "ukendt"}
+                <span
+                  style={{
+                    opacity: 0.6,
+                    fontSize: "0.75rem",
+                    marginTop: 2,
+                    color: "white",
+                    display: "block",
+                  }}
+                >
+                  {file.mimeType || "ukendt"}
+                </span>
+              </div>
             </div>
           </div>
         );
