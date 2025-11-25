@@ -6,44 +6,57 @@ import { DriveFile } from "../types/DriveFile";
 export default function ChatPane({ files = [] }: { files?: DriveFile[] }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Find fil hvis brugeren nævner navnet
-  const detectReferencedFile = (message: string) => {
-    const lower = message.toLowerCase();
+  // Find fil i tekst og match med vidensbanken
+  const detectRequestedFile = () => {
+    const match = input.match(/([A-Za-z0-9._-]+\.(pdf|docx|doc|csv|txt|xlsx|xls))/i);
+    if (!match) return null;
 
-    return files.find((f) => lower.includes(f.name.toLowerCase())) || null;
+    const fileName = match[1].toLowerCase();
+
+    const found = files.find((f: any) =>
+      f.name.toLowerCase() === fileName
+    );
+
+    return found || null;
   };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = input.trim();
-    const referencedFile = detectReferencedFile(userMessage);
+    const userMessage = { role: "user", text: input };
+    setMessages((prev) => [...prev, userMessage]);
 
-    // Tilføj brugerens besked til chatten
-    setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
-    setInput("");
+    const requestedFile = detectRequestedFile();
+    setLoading(true);
 
-    // Byg request payload
-    const payload: any = {
-      message: userMessage,
-    };
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: input,
+          requestedFile, // ← her sender vi filen korrekt
+        }),
+      });
 
-    if (referencedFile) {
-      payload.requestedFile = referencedFile;
+      const data = await res.json();
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: data.answer || "Intet svar." },
+      ]);
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: "Der opstod en fejl i chatten." },
+      ]);
     }
 
-    // Kald chat API
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-
-    // Tilføj assistentens svar
-    setMessages((prev) => [...prev, { role: "assistant", text: data.reply }]);
+    setLoading(false);
+    setInput("");
   };
 
   return (
@@ -68,12 +81,18 @@ export default function ChatPane({ files = [] }: { files?: DriveFile[] }) {
             key={i}
             style={{
               marginBottom: "16px",
-              color: msg.role === "assistant" ? "#dff" : "#fff",
+              color: msg.role === "assistant" ? "#fff" : "#aee2ff",
             }}
           >
             {msg.text}
           </div>
         ))}
+
+        {loading && (
+          <div style={{ color: "#fff", opacity: 0.6 }}>
+            Assistenten skriver…
+          </div>
+        )}
       </div>
 
       {/* Input area */}
@@ -97,18 +116,19 @@ export default function ChatPane({ files = [] }: { files?: DriveFile[] }) {
           placeholder="Skriv din besked..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
 
         <button
+          disabled={!input.trim() || loading}
           onClick={sendMessage}
-          disabled={!input.trim()}
           style={{
             padding: "12px 18px",
             borderRadius: "8px",
             border: "none",
-            backgroundColor: input.trim() ? "#0077aa" : "gray",
+            backgroundColor: input.trim() && !loading ? "#0077aa" : "gray",
             color: "#fff",
-            cursor: input.trim() ? "pointer" : "not-allowed",
+            cursor: input.trim() && !loading ? "pointer" : "not-allowed",
           }}
         >
           Send
