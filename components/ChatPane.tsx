@@ -1,43 +1,50 @@
 "use client";
 
 import { useState } from "react";
+import { DriveFile } from "../types/DriveFile";
 
-export default function ChatPane() {
-  const [messages, setMessages] = useState<{ role: string; text: string }[]>([]);
+export default function ChatPane({ files = [] }: { files?: DriveFile[] }) {
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  async function sendMessage() {
+  // Find fil hvis brugeren nævner navnet
+  const detectReferencedFile = (message: string) => {
+    const lower = message.toLowerCase();
+
+    return files.find((f) => lower.includes(f.name.toLowerCase())) || null;
+  };
+
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { role: "user", text: input };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
+    const userMessage = input.trim();
+    const referencedFile = detectReferencedFile(userMessage);
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input, agent: "default" }),
-      });
+    // Tilføj brugerens besked til chatten
+    setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
+    setInput("");
 
-      const data = await res.json();
-      const assistantMessage = {
-        role: "assistant",
-        text: data.reply || "Intet svar modtaget",
-      };
+    // Byg request payload
+    const payload: any = {
+      message: userMessage,
+    };
 
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", text: "Fejl i kommunikationen med serveren." },
-      ]);
+    if (referencedFile) {
+      payload.requestedFile = referencedFile;
     }
 
-    setInput("");
-    setIsLoading(false);
-  }
+    // Kald chat API
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    // Tilføj assistentens svar
+    setMessages((prev) => [...prev, { role: "assistant", text: data.reply }]);
+  };
 
   return (
     <div
@@ -61,19 +68,12 @@ export default function ChatPane() {
             key={i}
             style={{
               marginBottom: "16px",
-              color: msg.role === "user" ? "#fff" : "#aee4ff",
-              fontWeight: msg.role === "assistant" ? 400 : 600,
+              color: msg.role === "assistant" ? "#dff" : "#fff",
             }}
           >
             {msg.text}
           </div>
         ))}
-
-        {isLoading && (
-          <div style={{ color: "#7ec8ff", opacity: 0.8, fontStyle: "italic" }}>
-            Assistenten skriver…
-          </div>
-        )}
       </div>
 
       {/* Input area */}
@@ -97,12 +97,11 @@ export default function ChatPane() {
           placeholder="Skriv din besked..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
 
         <button
-          disabled={!input.trim()}
           onClick={sendMessage}
+          disabled={!input.trim()}
           style={{
             padding: "12px 18px",
             borderRadius: "8px",
