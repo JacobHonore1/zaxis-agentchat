@@ -9,6 +9,8 @@ export default function AgentSidebar({
   currentAgentId: AgentId;
   onSelectAgent: (id: AgentId) => void;
 }) {
+  const agentList = Object.values(agents); // ← FIX
+
   return (
     <div
       style={{
@@ -35,7 +37,7 @@ export default function AgentSidebar({
       </h3>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {agents.map((agent) => {
+        {agentList.map((agent) => {
           const isActive = agent.id === currentAgentId;
 
           return (
