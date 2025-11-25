@@ -3,7 +3,7 @@
 import { DriveFile } from "../types";
 import { useEffect, useState } from "react";
 
-export default function KnowledgeSidebar({ files = [] }: { files: DriveFile[] }) {
+export default function KnowledgeSidebar({ files = [] }: { files?: DriveFile[] }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
