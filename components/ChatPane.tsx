@@ -3,53 +3,52 @@
 import { useState } from "react";
 import { DriveFile } from "../types/DriveFile";
 
-export default function ChatPane({ selectedFile }: { selectedFile: DriveFile | null }) {
+export default function ChatPane({ files }: { files: DriveFile[] }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
 
-  const sendMessage = async () => {
+  function findRequestedFile(message: string, files: DriveFile[]) {
+    const lowerMsg = message.toLowerCase();
+    return files.find((f) => lowerMsg.includes(f.name.toLowerCase())) || null;
+  }
+
+  async function sendMessage() {
     if (!input.trim()) return;
+
+    const requestedFile = findRequestedFile(input, files);
+
+    const userMsgObj = { role: "user", text: input };
+    setMessages((m) => [...m, userMsgObj]);
+
+    setInput("");
 
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: input,
-        requestedFile: selectedFile,
+        message: userMsgObj.text,
+        requestedFile,
       }),
     });
 
     const data = await res.json();
+    const botMsgObj = { role: "assistant", text: data.reply || "Intet svar." };
 
-    setMessages([...messages, { text: data.reply }]);
-    setInput("");
-  };
+    setMessages((m) => [...m, botMsgObj]);
+  }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* Messages */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "24px",
-        }}
-      >
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* Chat messages */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "24px", color: "#fff" }}>
         {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: "16px", color: "#fff" }}>
+          <div key={i} style={{ marginBottom: 16 }}>
             {msg.text}
           </div>
         ))}
       </div>
 
-      {/* Input */}
+      {/* Input area */}
       <div
         style={{
           display: "flex",
