@@ -1,9 +1,25 @@
-export const metadata = { title: "Virtoo Agent Alpha" };
+export const metadata = {
+  title: "Virtuo Assistent MVP",
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body style={{ fontFamily: "system-ui", margin: 0, padding: 24 }}>
+      <body
+        style={{
+          margin: 0,
+          padding: 0,
+          overflow: "hidden",        // Ingen browser-scrollbars
+          background: "#002233",     // Sikrer ingen hvid kant
+          fontFamily: "Inter, sans-serif",
+          height: "100vh",
+          width: "100vw",
+        }}
+      >
         {children}
       </body>
     </html>
