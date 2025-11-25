@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import type { DriveFile } from "../../../types/DriveFile";
+import { agents } from "../../../config/agents";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -10,7 +11,13 @@ export async function POST(req: Request) {
   try {
     const { message, agent, fileId } = await req.json();
 
-    // Hent filer fra din egen /api/drive-files route
+    const selectedAgent = agents[agent as keyof typeof agents];
+
+    const baseSystemPrompt =
+      selectedAgent?.systemPrompt ||
+      "Du er en hjælpsom dansk assistent. Svar kort, klart og professionelt.";
+
+    // Hent filer fra egen route
     const driveUrl = new URL("/api/drive-files", req.url);
     const driveRes = await fetch(driveUrl.toString());
     const driveData = await driveRes.json();
@@ -35,17 +42,16 @@ export async function POST(req: Request) {
     }
 
     const systemPrompt = `
-Du er en hjælpsom dansk assistent for virksomheden Virtoo.
+${baseSystemPrompt}
 
 Du har adgang til følgende dokumenter i vidensbanken:
 ${fileListString}
 
-Hvis brugeren nævner et af dokumenterne, eller der er sendt uddrag med, skal du bruge dem som kontekst i dine svar.
-Hvis brugeren spørger "hvilke dokumenter har du" eller lignende, skal du svare ud fra listen ovenfor.
-Svar altid kortfattet, professionelt og på dansk.
+Hvis brugeren spørger hvilke dokumenter du har, skal du svare ud fra listen ovenfor.
+Hvis brugeren nævner et dokument ved navn eller der er sendt uddrag med, skal du bruge det aktivt i svaret.
 `;
 
-    const userPrompt =
+    const userContent =
       fileContext.length > 0
         ? `${fileContext}\n\nBrugerens spørgsmål: ${message}`
         : message;
@@ -54,7 +60,7 @@ Svar altid kortfattet, professionelt og på dansk.
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: userContent },
       ],
     });
 
@@ -64,7 +70,7 @@ Svar altid kortfattet, professionelt og på dansk.
   } catch (err: any) {
     console.error("Chat route error", err);
     return NextResponse.json(
-      { error: err.message || "Ukendt fejl" },
+      { error: err.message || "Ukendt fejl i chat endpoint" },
       { status: 500 }
     );
   }
