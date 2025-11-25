@@ -53,7 +53,9 @@ export default function AgentSidebar() {
                 background: isActive
                   ? "rgba(0,120,160,0.45)"
                   : "rgba(255,255,255,0.06)",
-                border: isActive ? "1px solid #00aaff" : "1px solid transparent",
+                border: isActive
+                  ? "1px solid #00aaff"
+                  : "1px solid transparent",
                 borderRadius: "10px",
                 padding: "14px",
                 cursor: "pointer",
@@ -74,6 +76,17 @@ export default function AgentSidebar() {
                 {agent.icon}
               </div>
 
-              {/* Text */}
+              {/* Tekst */}
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <strong style={{ marginBottom: "4px" }}>{agent.name}</strong>
+                <span style={{ opacity: 0.6, fontSize: "13px" }}>
+                  {agent.description}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
