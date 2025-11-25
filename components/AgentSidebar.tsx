@@ -9,7 +9,7 @@ export default function AgentSidebar({
   currentAgentId: AgentId;
   onSelectAgent: (id: AgentId) => void;
 }) {
-  const agentList = Object.values(agents); // ← FIX
+  const agentList = Object.values(agents);
 
   return (
     <div
