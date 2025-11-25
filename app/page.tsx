@@ -8,6 +8,7 @@ import { DriveFile } from "../types/DriveFile";
 
 export default function Page() {
   const [files, setFiles] = useState<DriveFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
 
   useEffect(() => {
     const loadFiles = async () => {
@@ -35,6 +36,7 @@ export default function Page() {
         fontFamily: "Inter, sans-serif",
       }}
     >
+      {/* Top bar */}
       <div
         style={{
           padding: "20px 40px",
@@ -46,7 +48,7 @@ export default function Page() {
           alignItems: "center",
         }}
       >
-        Virtuo Assistent MVP 0.13a
+        Virtoo Assistent MVP 0.25b
 
         <button
           style={{
@@ -63,6 +65,7 @@ export default function Page() {
         </button>
       </div>
 
+      {/* Layout */}
       <div
         style={{
           flex: 1,
@@ -73,28 +76,22 @@ export default function Page() {
           overflow: "hidden",
         }}
       >
-        {/* Agent Sidebar */}
+        {/* Agent sidebar */}
         <div
           style={{
             width: "320px",
             height: "100%",
             flexShrink: 0,
             display: "flex",
+            flexDirection: "column",
           }}
         >
-          <div
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              borderRadius: "14px",
-              background: "rgba(0, 0, 0, 0.25)",
-            }}
-          >
+          <div style={{ flex: 1, overflow: "hidden", borderRadius: "14px" }}>
             <AgentSidebar />
           </div>
         </div>
 
-        {/* Chat Pane */}
+        {/* Chat */}
         <div
           style={{
             flex: 1,
@@ -106,7 +103,7 @@ export default function Page() {
             flexDirection: "column",
           }}
         >
-          <ChatPane />
+          <ChatPane selectedFile={selectedFile} />
         </div>
 
         {/* Knowledge Sidebar */}
@@ -116,17 +113,14 @@ export default function Page() {
             height: "100%",
             flexShrink: 0,
             display: "flex",
+            flexDirection: "column",
           }}
         >
-          <div
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              borderRadius: "14px",
-              background: "rgba(0,0,0,0.25)",
-            }}
-          >
-            <KnowledgeSidebar files={files} />
+          <div style={{ flex: 1, overflow: "hidden", borderRadius: "14px" }}>
+            <KnowledgeSidebar
+              files={files}
+              onSelectFile={(file) => setSelectedFile(file)}
+            />
           </div>
         </div>
       </div>
