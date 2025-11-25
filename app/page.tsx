@@ -4,7 +4,6 @@ import { useState } from "react";
 import AgentSidebar from "../components/AgentSidebar";
 import KnowledgeSidebar from "../components/KnowledgeSidebar";
 import { AgentId, defaultAgentId } from "../config/agents";
-import type { DriveFile } from "../types/DriveFile";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -16,9 +15,7 @@ export default function HomePage() {
   const [inputMessage, setInputMessage] = useState("");
   const [currentAgent, setCurrentAgent] = useState<AgentId>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Markeret dokument
-  const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   async function sendMessage() {
     if (!inputMessage.trim()) return;
@@ -28,7 +25,7 @@ export default function HomePage() {
       content: inputMessage,
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
     setIsLoading(true);
 
     try {
@@ -38,7 +35,6 @@ export default function HomePage() {
         body: JSON.stringify({
           message: inputMessage,
           agent: currentAgent,
-          file: selectedFile,
         }),
       });
 
@@ -49,7 +45,7 @@ export default function HomePage() {
         content: data.reply || "Intet svar modtaget",
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev: ChatMessage[]) => [...prev, assistantMsg]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -64,198 +60,178 @@ export default function HomePage() {
     setIsLoading(false);
   }
 
-  function resetChat() {
-    setMessages([]);
-    setInputMessage("");
-    setSelectedFile(null);
-  }
-
   return (
     <div
       style={{
         width: "100vw",
         height: "100vh",
         background: "#002233",
-        display: "flex",
-        justifyContent: "center",
-        padding: 20,
+        overflow: "hidden",
+        padding: "20px",
         boxSizing: "border-box",
       }}
     >
-      {/* Centeret arbejdsområde */}
+      {/* Scrollbar styling injiceret direkte */}
+      <style>
+        {`
+          .scroll-area::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          .scroll-area::-webkit-scrollbar-thumb {
+            background: rgba(0, 150, 200, 0.35);
+            border-radius: 10px;
+          }
+
+          .scroll-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 180, 255, 0.5);
+          }
+
+          .scroll-area::-webkit-scrollbar-track {
+            background: transparent;
+          }
+        `}
+      </style>
+
+      {/* Øverste linje med titel og reset */}
       <div
         style={{
           width: "100%",
-          maxWidth: 1600,
-          height: "100%",
+          color: "white",
           display: "flex",
-          flexDirection: "column",
-          gap: 16,
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
         }}
       >
-        {/* Topbar */}
-        <div
+        <h2 style={{ margin: 0, fontWeight: 600 }}>Virtoo Assistent MVP 0.13a</h2>
+
+        <button
+          onClick={() => {
+            setMessages([]);
+            setInputMessage("");
+          }}
           style={{
+            padding: "6px 16px",
+            borderRadius: 8,
+            border: "none",
+            cursor: "pointer",
+            background: "#0af",
             color: "white",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "4px 8px",
+            fontWeight: 600,
           }}
         >
-          <h2
-            style={{
-              fontSize: "1.4rem",
-              margin: 0,
-            }}
-          >
-            Virtoo Assistent MVP 0.13a
-          </h2>
+          Reset chat
+        </button>
+      </div>
 
-          <button
-            onClick={resetChat}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 8,
-              border: "none",
-              background: "#0af",
-              color: "white",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Reset chat
-          </button>
+      {/* 3-kolonne layout */}
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          height: "calc(100% - 60px)",
+          gap: "20px",
+        }}
+      >
+        {/* Venstre kolonne */}
+        <div style={{ width: "260px", height: "100%" }}>
+          <AgentSidebar
+            currentAgentId={currentAgent}
+            onSelectAgent={(id) => setCurrentAgent(id)}
+          />
         </div>
 
-        {/* Tre kolonner */}
+        {/* Chat midte */}
         <div
           style={{
-            display: "flex",
-            gap: 20,
             flex: 1,
-            height: "100%",
+            background: "linear-gradient(180deg, #012230, #013549)",
+            padding: "20px",
+            borderRadius: 16,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
           }}
         >
-          {/* Venstre kolonne */}
-          <div
-            style={{
-              width: 260,
-              height: "100%",
-              background: "rgba(255,255,255,0.06)",
-              borderRadius: 16,
-              padding: 16,
-            }}
-          >
-            <AgentSidebar
-              currentAgentId={currentAgent}
-              onSelectAgent={(id) => setCurrentAgent(id)}
-            />
-          </div>
-
-          {/* Chat midte */}
-          <div
-            style={{
-              flex: 1,
-              height: "100%",
-              background: "linear-gradient(180deg,#012230,#013549)",
-              borderRadius: 16,
-              padding: 20,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            {/* Beskeder */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                paddingRight: 10,
-              }}
-            >
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    marginBottom: 12,
-                    padding: 12,
-                    borderRadius: 10,
-                    maxWidth: "70%",
-                    background:
-                      msg.role === "user"
-                        ? "rgba(255,255,255,0.12)"
-                        : "rgba(0,0,0,0.25)",
-                    color: "white",
-                  }}
-                >
-                  <strong
-                    style={{
-                      fontSize: "0.8rem",
-                      opacity: 0.7,
-                    }}
-                  >
-                    {msg.role === "user" ? "Bruger" : "Assistent"}
-                  </strong>
-                  <div style={{ marginTop: 6 }}>{msg.content}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Input */}
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                paddingTop: 10,
-              }}
-            >
-              <input
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                placeholder="Skriv din besked…"
+          {/* Chat scroll */}
+          <div className="scroll-area" style={{ flex: 1, overflowY: "auto", paddingRight: 10 }}>
+            {messages.map((msg, index) => (
+              <div
+                key={index}
                 style={{
-                  flex: 1,
+                  marginBottom: 12,
                   padding: 12,
-                  borderRadius: 8,
-                  border: "none",
-                }}
-              />
-
-              <button
-                onClick={sendMessage}
-                disabled={isLoading}
-                style={{
-                  padding: "12px 20px",
-                  background: "#0af",
+                  borderRadius: 10,
+                  maxWidth: "65%",
+                  background:
+                    msg.role === "user"
+                      ? "rgba(255,255,255,0.12)"
+                      : "rgba(0,0,0,0.25)",
                   color: "white",
-                  borderRadius: 8,
-                  border: "none",
-                  fontWeight: 600,
-                  cursor: "pointer",
                 }}
               >
-                Send
-              </button>
-            </div>
+                <strong
+                  style={{
+                    fontSize: "0.8rem",
+                    opacity: 0.8,
+                    marginBottom: 6,
+                    display: "block",
+                  }}
+                >
+                  {msg.role === "user" ? "Bruger" : "Assistent"}
+                </strong>
+
+                <span>{msg.content}</span>
+              </div>
+            ))}
+
+            {isLoading && (
+              <div style={{ color: "rgba(255,255,255,0.6)", fontStyle: "italic" }}>
+                Assistenten skriver…
+              </div>
+            )}
           </div>
 
-          {/* Vidensbank */}
-          <div
-            style={{
-              width: 300,
-              height: "100%",
-              background: "rgba(255,255,255,0.06)",
-              borderRadius: 16,
-              padding: 16,
-            }}
-          >
-            <KnowledgeSidebar
-              onSelectFile={(file) => setSelectedFile(file)}
-              selectedFileId={selectedFile?.id || null}
+          {/* Inputfelt */}
+          <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+            <input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              placeholder="Skriv din besked"
+              style={{
+                flex: 1,
+                padding: "12px",
+                borderRadius: 8,
+                border: "none",
+                outline: "none",
+              }}
             />
+            <button
+              onClick={sendMessage}
+              disabled={isLoading}
+              style={{
+                padding: "10px 18px",
+                borderRadius: 8,
+                border: "none",
+                background: isLoading ? "gray" : "#0af",
+                color: "white",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Send
+            </button>
           </div>
+        </div>
+
+        {/* Vidensbank højre kolonne */}
+        <div style={{ width: "300px", height: "100%" }}>
+          <KnowledgeSidebar
+            onSelectFile={(file) => setSelectedFile(file.id)}
+            selectedFileId={selectedFile}
+          />
         </div>
       </div>
     </div>
