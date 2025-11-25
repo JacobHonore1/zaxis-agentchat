@@ -14,16 +14,19 @@ export default function AgentSidebar() {
         flexDirection: "column",
         padding: 20,
         overflowY: "auto",
+        scrollbarWidth: "thin",
+        scrollbarColor: "#0b6fa4 transparent",
       }}
     >
-      <div
-        style={{
-          color: "#fff",
-          fontSize: 16,
-          marginBottom: 16,
-          opacity: 0.9,
-        }}
-      >
+      <style>
+        {`
+          div::-webkit-scrollbar { width: 6px; }
+          div::-webkit-scrollbar-thumb { background-color: #0b6fa4; border-radius: 4px; }
+          div::-webkit-scrollbar-track { background: transparent; }
+        `}
+      </style>
+
+      <div style={{ color: "#fff", fontSize: 16, marginBottom: 16, opacity: 0.9 }}>
         Assistenter
       </div>
 
@@ -44,24 +47,13 @@ export default function AgentSidebar() {
                 cursor: "pointer",
                 transition: "0.15s",
                 display: "flex",
-                flexDirection: "row",
                 gap: 10,
-                alignItems: "flex-start",
               }}
             >
               <div style={{ fontSize: 22 }}>{agent.icon}</div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <strong style={{ color: "#fff", fontSize: 15 }}>
-                  {agent.name}
-                </strong>
-                <span
-                  style={{
-                    color: "#c7d4dd",
-                    fontSize: 13,
-                    marginTop: 4,
-                    opacity: 0.9,
-                  }}
-                >
+                <strong style={{ color: "#fff", fontSize: 15 }}>{agent.name}</strong>
+                <span style={{ color: "#c7d4dd", fontSize: 13, opacity: 0.9 }}>
                   {agent.description}
                 </span>
               </div>
