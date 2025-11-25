@@ -1,12 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgentSidebar from "../components/AgentSidebar";
 import KnowledgeSidebar from "../components/KnowledgeSidebar";
 import ChatPane from "../components/ChatPane";
+import { DriveFile } from "../types/DriveFile";
 
 export default function Page() {
-  const [chatInstance, setChatInstance] = useState(0);
+  const [files, setFiles] = useState<DriveFile[]>([]);
+
+  useEffect(() => {
+    const loadFiles = async () => {
+      try {
+        const res = await fetch("/api/drive-files");
+        const data = await res.json();
+        setFiles(data.files || []);
+      } catch (err) {
+        console.error("Fejl ved hentning af filer", err);
+      }
+    };
+
+    loadFiles();
+  }, []);
 
   return (
     <div
@@ -30,78 +45,91 @@ export default function Page() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          flexShrink: 0,
         }}
       >
         Virtuo Assistent MVP 0.13a
 
         <button
-          onClick={() => setChatInstance((n) => n + 1)} // reset ved remount
           style={{
             padding: "8px 18px",
             backgroundColor: "#005f8a",
             color: "#fff",
-            borderRadius: 8,
+            borderRadius: "8px",
             border: "none",
             cursor: "pointer",
           }}
+          onClick={() => window.location.reload()}
         >
           Reset chat
         </button>
       </div>
 
-      {/* Tre paneler med samme højde og runding */}
+      {/* 3-column layout */}
       <div
         style={{
           flex: 1,
-          display: "grid",
-          gridTemplateColumns: "320px 1fr 360px",
-          gap: 24,
+          display: "flex",
+          flexDirection: "row",
+          gap: "24px",
           padding: "0 40px 40px 40px",
           overflow: "hidden",
-          alignItems: "stretch",
         }}
       >
-        {/* Assistenter */}
+        {/* Agent Sidebar */}
         <div
           style={{
+            width: "320px",
             height: "100%",
-            borderRadius: 12,
-            background: "rgba(0,0,0,0.25)",
-            overflow: "hidden",
+            flexShrink: 0,
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <AgentSidebar />
+          <div
+            style={{
+              flex: 1,
+              overflow: "hidden",
+              borderRadius: "14px",
+            }}
+          >
+            <AgentSidebar />
+          </div>
         </div>
 
-        {/* Chat */}
+        {/* Chat Pane */}
         <div
           style={{
+            flex: 1,
             height: "100%",
-            borderRadius: 12,
-            background: "rgba(0,0,0,0.25)",
+            borderRadius: "14px",
             overflow: "hidden",
+            background: "rgba(0,0,0,0.2)",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <ChatPane key={chatInstance} />
+          <ChatPane />
         </div>
 
-        {/* Vidensbank */}
+        {/* Knowledge Sidebar */}
         <div
           style={{
+            width: "360px",
             height: "100%",
-            borderRadius: 12,
-            background: "rgba(0,0,0,0.25)",
-            overflow: "hidden",
+            flexShrink: 0,
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <KnowledgeSidebar />
+          <div
+            style={{
+              flex: 1,
+              overflow: "hidden",
+              borderRadius: "14px",
+            }}
+          >
+            <KnowledgeSidebar files={files} />
+          </div>
         </div>
       </div>
     </div>
