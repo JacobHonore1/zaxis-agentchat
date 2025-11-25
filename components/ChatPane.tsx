@@ -1,177 +1,155 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
+import { useState, useRef, useEffect } from "react";
 
 export default function ChatPane() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState("");
-  const [thinking, setThinking] = useState(false);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [isThinking, setIsThinking] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, thinking]);
+  const sendMessage = async () => {
+    if (!input.trim()) return;
 
-  async function sendMessage() {
-    const trimmed = input.trim();
-    if (!trimmed || thinking) return;
-
-    const userMessage: ChatMessage = { role: "user", content: trimmed };
+    const userMessage = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-    setThinking(true);
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed }),
-      });
+    setIsThinking(true);
 
-      const data = await res.json();
-      const replyText =
-        data.reply || "Jeg modtog ikke noget brugbart svar fra serveren.";
-
-      const assistantMessage: ChatMessage = {
-        role: "assistant",
-        content: replyText,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
+    // Simulerer assistentsvar (din API kommer her normalt)
+    setTimeout(() => {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: "Der opstod en fejl i kommunikationen med serveren.",
-        },
+        { role: "assistant", content: "Tak for din besked. Hvordan kan jeg hjælpe?" },
       ]);
-    } finally {
-      setThinking(false);
-    }
-  }
+      setIsThinking(false);
+    }, 1600);
+  };
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      sendMessage();
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
-  }
-
-  const canSend = input.trim().length > 0 && !thinking;
+  }, [messages, isThinking]);
 
   return (
     <div
       style={{
-        flex: 1,
+        width: "100%",
+        height: "100%",
+        padding: "20px",
         display: "flex",
         flexDirection: "column",
-        height: "100%",
       }}
     >
-      {/* Beskeder */}
       <div
-        ref={scrollRef}
+        ref={chatRef}
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: 20,
-          paddingRight: 16,
+          paddingRight: "8px",
         }}
       >
         {messages.map((msg, index) => (
           <div
             key={index}
             style={{
-              marginBottom: 14,
-              maxWidth: "75%",
+              backgroundColor:
+                msg.role === "assistant"
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(255,255,255,0.12)",
+              color: "#fff",
+              borderRadius: "12px",
+              padding: "12px 16px",
+              marginBottom: "12px",
+              maxWidth: "80%",
             }}
           >
-            <div
-              style={{
-                backgroundColor:
-                  msg.role === "user"
-                    ? "rgba(255,255,255,0.14)"
-                    : "rgba(0,0,0,0.35)",
-                padding: 12,
-                borderRadius: 8,
-                color: "#fff",
-              }}
-            >
-              <strong
-                style={{
-                  fontSize: 12,
-                  opacity: 0.7,
-                  marginBottom: 4,
-                  display: "block",
-                }}
-              >
-                {msg.role === "user" ? "Bruger" : "Assistent"}
-              </strong>
-              <div style={{ fontSize: 14 }}>{msg.content}</div>
-            </div>
+            <strong style={{ opacity: 0.8 }}>
+              {msg.role === "assistant" ? "Assistent" : "Bruger"}
+            </strong>
+            <div style={{ marginTop: "4px" }}>{msg.content}</div>
           </div>
         ))}
 
-        {thinking && (
+        {isThinking && (
           <div
             style={{
-              marginTop: 8,
-              fontStyle: "italic",
-              fontSize: 13,
+              backgroundColor: "rgba(255,255,255,0.08)",
               color: "#fff",
-              opacity: 0.75,
+              borderRadius: "12px",
+              padding: "12px 16px",
+              marginBottom: "12px",
+              width: "120px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
             }}
           >
-            Assistenten skriver…
+            <strong style={{ opacity: 0.8 }}>Assistenten skriver</strong>
+
+            {/* Tre animerede prikker */}
+            <div
+              style={{
+                display: "flex",
+                gap: "6px",
+                alignItems: "center",
+                justifyContent: "flex-start",
+              }}
+            >
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor: "#fff",
+                    opacity: 0.7,
+                    animation: `dotPulse 1.4s infinite ease-in-out`,
+                    animationDelay: `${i * 0.2}s`,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Animation keyframes */}
+            <style jsx>{`
+              @keyframes dotPulse {
+                0% { opacity: 0.2; transform: translateY(0); }
+                50% { opacity: 1; transform: translateY(-3px); }
+                100% { opacity: 0.2; transform: translateY(0); }
+              }
+            `}</style>
           </div>
         )}
       </div>
 
-      {/* Inputlinje */}
-      <div
-        style={{
-          padding: 16,
-          paddingTop: 10,
-          display: "flex",
-          gap: 10,
-          borderTop: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
+      {/* Input række */}
+      <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Skriv din besked…"
+          placeholder="Skriv din besked..."
           style={{
             flex: 1,
-            padding: "10px 12px",
-            borderRadius: 8,
+            padding: "12px 16px",
+            borderRadius: "10px",
             border: "none",
-            outline: "none",
-            fontSize: 14,
           }}
         />
 
         <button
           onClick={sendMessage}
-          disabled={!canSend}
+          disabled={!input.trim()}
           style={{
-            padding: "10px 18px",
-            borderRadius: 8,
-            border: "none",
-            fontWeight: 600,
-            backgroundColor: canSend ? "#0096d6" : "#335766",
+            backgroundColor: input.trim() ? "#0077aa" : "#4b6b7a",
             color: "#fff",
-            cursor: canSend ? "pointer" : "not-allowed",
-            opacity: canSend ? 1 : 0.5,
+            padding: "10px 22px",
+            borderRadius: "10px",
+            border: "none",
+            cursor: input.trim() ? "pointer" : "default",
           }}
         >
           Send
