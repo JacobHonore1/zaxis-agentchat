@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import type { DriveFile } from "../../../types/DriveFile";
-import { agents } from "../../../config/agents";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -9,69 +7,64 @@ const client = new OpenAI({
 
 export async function POST(req: Request) {
   try {
-    const { message, agent, fileId } = await req.json();
+    const { message, agent } = await req.json();
 
-    const selectedAgent = agents[agent as keyof typeof agents];
-
-    const baseSystemPrompt =
-      selectedAgent?.systemPrompt ||
-      "Du er en hjælpsom dansk assistent. Svar kort, klart og professionelt.";
-
-    // Hent filer fra egen route
-    const driveUrl = new URL("/api/drive-files", req.url);
-    const driveRes = await fetch(driveUrl.toString());
-    const driveData = await driveRes.json();
-    const files: DriveFile[] = driveData.files || [];
-
-    const fileListString =
-      files.length > 0
-        ? files.map((f) => `• ${f.name}`).join("\n")
-        : "Ingen dokumenter fundet.";
-
+    let systemPrompt = "Du er en hjælpsom assistent.";
     let fileContext = "";
 
-    if (fileId) {
-      const selected = files.find((f) => f.id === fileId);
-      if (selected && selected.text) {
-        const snippet =
-          selected.text.length > 8000
-            ? selected.text.slice(0, 8000)
-            : selected.text;
-        fileContext = `Uddrag fra dokumentet "${selected.name}":\n${snippet}`;
+    // 1) Finder filnavne i brugerens tekst
+    const fileRegex = /([\w\-.]+\.(pdf|txt|docx?|xlsx?))/i;
+    const match = message.match(fileRegex);
+
+    if (match) {
+      const filename = match[1];
+
+      try {
+        // 2) Hent fil-listen
+        const listRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/drive-files`);
+        const { files } = await listRes.json();
+
+        // 3) Find den fil brugeren nævnte
+        const found = files.find((f: any) => f.name.toLowerCase() === filename.toLowerCase());
+
+        if (found) {
+          // 4) Hent filens indhold via vores nye endpoint
+          const textRes = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/api/drive-file?id=${found.id}`
+          );
+
+          const data = await textRes.json();
+
+          if (data.text) {
+            fileContext =
+              `Følgende tekst er hentet fra filen '${filename}':\n\n` +
+              data.text.slice(0, 12000);
+          }
+        }
+      } catch (err) {
+        console.error("Fejl ved filhentning:", err);
       }
     }
 
-    const systemPrompt = `
-${baseSystemPrompt}
+    // 5) Kombiner filtekst + bruger tekst
+    const userPrompt = fileContext
+      ? fileContext + `\n\nBrugerens besked: ${message}`
+      : message;
 
-Du har adgang til følgende dokumenter i vidensbanken:
-${fileListString}
-
-Hvis brugeren spørger hvilke dokumenter du har, skal du svare ud fra listen ovenfor.
-Hvis brugeren nævner et dokument ved navn eller der er sendt uddrag med, skal du bruge det aktivt i svaret.
-`;
-
-    const userContent =
-      fileContext.length > 0
-        ? `${fileContext}\n\nBrugerens spørgsmål: ${message}`
-        : message;
-
+    // 6) Send til OpenAI
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
+        { role: "user", content: userPrompt },
       ],
     });
 
     return NextResponse.json({
       reply: completion.choices[0].message.content,
     });
+
   } catch (err: any) {
-    console.error("Chat route error", err);
-    return NextResponse.json(
-      { error: err.message || "Ukendt fejl i chat endpoint" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
