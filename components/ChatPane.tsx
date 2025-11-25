@@ -6,6 +6,13 @@ export default function ChatPane() {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
 
+  const handleSend = () => {
+    if (!input.trim()) return;
+
+    setMessages((prev) => [...prev, { text: input }]);
+    setInput("");
+  };
+
   return (
     <div
       style={{
@@ -21,10 +28,11 @@ export default function ChatPane() {
           flex: 1,
           overflowY: "auto",
           padding: "24px",
+          color: "#fff",
         }}
       >
         {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: "16px", color: "#fff" }}>
+          <div key={i} style={{ marginBottom: "16px" }}>
             {msg.text}
           </div>
         ))}
@@ -49,11 +57,12 @@ export default function ChatPane() {
             outline: "none",
           }}
           placeholder="Skriv din besked..."
-          value = {input}
-          onChange = {(e) => setInput(e.target.value)}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
         />
 
         <button
+          onClick={handleSend}
           disabled={!input.trim()}
           style={{
             padding: "12px 18px",
