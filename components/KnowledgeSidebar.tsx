@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-export type DriveFile = {
-  id: string;
-  name: string;
-  mimeType?: string;
-};
+import type { DriveFile } from "../types/DriveFile";
 
 export default function KnowledgeSidebar({
   onSelectFile,
@@ -19,9 +14,13 @@ export default function KnowledgeSidebar({
 
   useEffect(() => {
     async function loadFiles() {
-      const res = await fetch("/api/drive-files");
-      const data = await res.json();
-      setFiles(data.files || []);
+      try {
+        const res = await fetch("/api/drive-files");
+        const data = await res.json();
+        setFiles(data.files || []);
+      } catch (err) {
+        console.error("Fejl ved hentning af filer", err);
+      }
     }
     loadFiles();
   }, []);
@@ -31,20 +30,22 @@ export default function KnowledgeSidebar({
     const lower = mime.toLowerCase();
     if (lower.includes("pdf")) return "📕";
     if (lower.includes("doc") || lower.includes("word")) return "📘";
-    if (lower.includes("text")) return "📗";
+    if (lower.includes("text") || lower.includes("plain")) return "📗";
     return "📁";
   }
 
   return (
     <div
-      className="scroll-area"
       style={{
         width: "100%",
         height: "100%",
-        padding: 20,
         background: "rgba(255,255,255,0.04)",
         borderRadius: 16,
-        overflowY: "auto",
+        padding: 20,
+        color: "white",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       <h3
@@ -54,63 +55,68 @@ export default function KnowledgeSidebar({
           fontSize: "1rem",
           fontWeight: 600,
           opacity: 0.9,
-          color: "white",
         }}
       >
         Vidensbank
       </h3>
 
-      {files.map((file) => {
-        const selected = file.id === selectedFileId;
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          paddingRight: 6,
+        }}
+      >
+        {files.map((file) => {
+          const selected = file.id === selectedFileId;
 
-        return (
-          <div
-            key={file.id}
-            onClick={() => onSelectFile(file)}
-            style={{
-              padding: 14,
-              marginBottom: 12,
-              borderRadius: 12,
-              background: selected
-                ? "rgba(56,189,248,0.25)"
-                : "rgba(255,255,255,0.06)",
-              cursor: "pointer",
-              boxShadow: selected
-                ? "0 0 8px rgba(56,189,248,0.3)"
-                : "none",
-              transition: "0.2s",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: "1.2rem" }}>{getIcon(file.mimeType)}</span>
-
-              <div>
-                <strong
-                  style={{
-                    fontSize: "0.95rem",
-                    color: "white",
-                    display: "block",
-                  }}
-                >
-                  {file.name}
-                </strong>
-
-                <span
-                  style={{
-                    opacity: 0.6,
-                    fontSize: "0.75rem",
-                    marginTop: 2,
-                    color: "white",
-                    display: "block",
-                  }}
-                >
-                  {file.mimeType || "ukendt"}
+          return (
+            <div
+              key={file.id}
+              onClick={() => onSelectFile(file)}
+              style={{
+                padding: 12,
+                marginBottom: 10,
+                borderRadius: 12,
+                cursor: "pointer",
+                background: selected
+                  ? "rgba(56,189,248,0.25)"
+                  : "rgba(255,255,255,0.07)",
+                boxShadow: selected
+                  ? "0 0 10px rgba(56,189,248,0.4)"
+                  : "none",
+                transition: "0.15s",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: "1.1rem" }}>
+                  {getIcon(file.mimeType)}
                 </span>
+                <div>
+                  <strong
+                    style={{
+                      fontSize: "0.95rem",
+                      display: "block",
+                    }}
+                  >
+                    {file.name}
+                  </strong>
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      opacity: 0.6,
+                      display: "block",
+                      marginTop: 2,
+                    }}
+                  >
+                    {file.mimeType || "ukendt"}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
