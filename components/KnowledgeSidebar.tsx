@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 type DriveFile = {
   id: string;
   name: string;
-  mimeType: string;
+  mimeType?: string;
   text?: string;
 };
 
@@ -29,11 +29,16 @@ export default function KnowledgeSidebar({
     loadFiles();
   }, []);
 
-  function getIcon(mime: string) {
-    if (mime.includes("pdf")) return "📕";
-    if (mime.includes("word") || mime.includes("doc")) return "📘";
-    if (mime.includes("text")) return "📗";
-    if (mime.includes("sheet") || mime.includes("excel")) return "📙";
+  function getIcon(mime?: string) {
+    if (!mime) return "📁"; // fallback
+
+    const lower = mime.toLowerCase();
+
+    if (lower.includes("pdf")) return "📕";
+    if (lower.includes("word") || lower.includes("doc")) return "📘";
+    if (lower.includes("text")) return "📗";
+    if (lower.includes("sheet") || lower.includes("excel")) return "📙";
+
     return "📁";
   }
 
@@ -46,7 +51,7 @@ export default function KnowledgeSidebar({
         padding: "16px",
         background: "rgba(255,255,255,0.03)",
         overflowY: "auto",
-        borderRadius: "16px",
+        borderRadius: "16px"
       }}
     >
       <h3 style={{ marginBottom: 16 }}>Vidensbank</h3>
@@ -61,7 +66,7 @@ export default function KnowledgeSidebar({
             borderRadius: "10px",
             background: "rgba(255,255,255,0.06)",
             cursor: "pointer",
-            transition: "background 0.2s",
+            transition: "background 0.2s"
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -73,10 +78,10 @@ export default function KnowledgeSidebar({
             style={{
               fontSize: "0.75rem",
               opacity: 0.7,
-              marginTop: 4,
+              marginTop: 4
             }}
           >
-            {file.mimeType.split("/")[1] || "fil"}
+            {file.mimeType ? file.mimeType.split("/")[1] : "ukendt"}
           </div>
         </div>
       ))}
