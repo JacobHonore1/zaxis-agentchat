@@ -14,8 +14,6 @@ export default function AgentSidebar() {
         flexDirection: "column",
         padding: 20,
         overflowY: "auto",
-        background: "rgba(0,0,0,0.20)", // MATCH CHAT PANE
-        borderRadius: "14px",
       }}
     >
       <div
