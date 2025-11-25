@@ -14,7 +14,13 @@ function getIconForMime(mime?: string, name?: string) {
   return "📙";
 }
 
-export default function KnowledgeSidebar({ files = [] }: { files?: DriveFile[] }) {
+export default function KnowledgeSidebar({
+  files = [],
+  onSelectFile,
+}: {
+  files?: DriveFile[];
+  onSelectFile: (file: DriveFile) => void;
+}) {
   return (
     <div
       style={{
@@ -24,89 +30,51 @@ export default function KnowledgeSidebar({ files = [] }: { files?: DriveFile[] }
         background: "rgba(0, 0, 0, 0.25)",
         display: "flex",
         flexDirection: "column",
-        borderRadius: "14px",            // matcher panel-look
-        boxSizing: "border-box",
       }}
     >
-      {/* Titel fixed øverst */}
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 600,
-          color: "#fff",
-          marginBottom: 16,
-          flexShrink: 0,
-        }}
-      >
+      <div style={{ fontSize: 18, fontWeight: 600, color: "#fff", marginBottom: 16 }}>
         Vidensbank
       </div>
 
-      {/* Scrollcontainer */}
       <div
         style={{
           flex: 1,
           overflowY: "auto",
-          paddingRight: 6,
+          scrollbarWidth: "thin",
+          scrollbarColor: "#0b6fa4 transparent",
         }}
       >
-        {/* Smal scrollbar */}
         <style>
           {`
-            div::-webkit-scrollbar {
-              width: 6px;
-            }
-            div::-webkit-scrollbar-thumb {
-              background-color: #0b6fa4;
-              border-radius: 4px;
-            }
-            div::-webkit-scrollbar-track {
-              background: transparent;
-            }
+            div::-webkit-scrollbar { width: 6px; }
+            div::-webkit-scrollbar-thumb { background-color: #0b6fa4; border-radius: 4px; }
+            div::-webkit-scrollbar-track { background: transparent; }
           `}
         </style>
 
-        {/* Loading-tekst */}
         {files.length === 0 ? (
           <div style={{ color: "#fff", opacity: 0.7 }}>Indlæser filer…</div>
         ) : (
           files.map((file) => (
             <div
               key={file.id}
+              onClick={() => onSelectFile(file)}
               style={{
                 background: "rgba(255,255,255,0.07)",
-                padding: "12px 14px",
-                marginBottom: 12,
+                padding: 14,
+                marginBottom: 14,
                 borderRadius: 10,
                 color: "white",
                 display: "flex",
-                alignItems: "center",
-                gap: 12,
-                maxWidth: "100%",          // sørger for at den aldrig stikker ud
-                boxSizing: "border-box",
+                flexDirection: "column",
+                gap: 4,
+                cursor: "pointer",
+                transition: "0.1s",
               }}
             >
-              {/* Ikon */}
-              <div style={{ fontSize: 22, flexShrink: 0 }}>
-                {getIconForMime(file.mimeType, file.name)}
-              </div>
-
-              {/* Tekstblok */}
-              <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                <div
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 500,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    maxWidth: "100%",
-                  }}
-                >
-                  {file.name}
-                </div>
-
-                <div style={{ fontSize: 12, opacity: 0.8 }}>Uploadet: ukendt</div>
-              </div>
+              <div style={{ fontSize: 20 }}>{getIconForMime(file.mimeType, file.name)}</div>
+              <div style={{ fontSize: 15, fontWeight: 500 }}>{file.name}</div>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>filtype</div>
             </div>
           ))
         )}
