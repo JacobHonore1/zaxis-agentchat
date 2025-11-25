@@ -1,31 +1,71 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
 
 export default function ChatPane() {
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  async function send() {
-    if (!input.trim()) return;
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, thinking]);
 
-    setMessages((m) => [...m, { role: "user", content: input }]);
+  async function sendMessage() {
+    const trimmed = input.trim();
+    if (!trimmed || thinking) return;
+
+    const userMessage: ChatMessage = { role: "user", content: trimmed };
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
-    setLoading(true);
+    setThinking(true);
 
-    const r = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: input }),
-    });
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed }),
+      });
 
-    const d = await r.json();
-    setMessages((m) => [...m, { role: "assistant", content: d.reply }]);
-    setLoading(false);
+      const data = await res.json();
+      const replyText =
+        data.reply || "Jeg modtog ikke noget brugbart svar fra serveren.";
+
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: replyText,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Der opstod en fejl i kommunikationen med serveren.",
+        },
+      ]);
+    } finally {
+      setThinking(false);
+    }
   }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  const canSend = input.trim().length > 0 && !thinking;
 
   return (
     <div
@@ -33,76 +73,105 @@ export default function ChatPane() {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        height: "100%",
       }}
     >
+      {/* Beskeder */}
       <div
+        ref={scrollRef}
         style={{
           flex: 1,
           overflowY: "auto",
           padding: 20,
-          paddingRight: 12,
+          paddingRight: 16,
         }}
       >
-        {messages.map((msg, i) => (
+        {messages.map((msg, index) => (
           <div
-            key={i}
+            key={index}
             style={{
-              marginBottom: 12,
-              background:
-                msg.role === "user"
-                  ? "rgba(255,255,255,0.15)"
-                  : "rgba(0,0,0,0.25)",
-              padding: 12,
-              borderRadius: 10,
-              color: "#fff",
-              maxWidth: "70%",
+              marginBottom: 14,
+              maxWidth: "75%",
             }}
           >
-            <strong style={{ opacity: 0.7, fontSize: "12px" }}>
-              {msg.role === "user" ? "Bruger" : "Assistent"}
-            </strong>
-            <div style={{ marginTop: 6 }}>{msg.content}</div>
+            <div
+              style={{
+                backgroundColor:
+                  msg.role === "user"
+                    ? "rgba(255,255,255,0.14)"
+                    : "rgba(0,0,0,0.35)",
+                padding: 12,
+                borderRadius: 8,
+                color: "#fff",
+              }}
+            >
+              <strong
+                style={{
+                  fontSize: 12,
+                  opacity: 0.7,
+                  marginBottom: 4,
+                  display: "block",
+                }}
+              >
+                {msg.role === "user" ? "Bruger" : "Assistent"}
+              </strong>
+              <div style={{ fontSize: 14 }}>{msg.content}</div>
+            </div>
           </div>
         ))}
 
-        {loading && (
+        {thinking && (
           <div
             style={{
-              color: "#fff",
-              opacity: 0.6,
+              marginTop: 8,
               fontStyle: "italic",
-              padding: "12px 0",
+              fontSize: 13,
+              color: "#fff",
+              opacity: 0.75,
             }}
           >
-            Assistenten tænker<span className="dotdotdot">...</span>
+            Assistenten skriver…
           </div>
         )}
       </div>
 
-      {/* Input area */}
-      <div style={{ display: "flex", gap: 12, padding: 20 }}>
+      {/* Inputlinje */}
+      <div
+        style={{
+          padding: 16,
+          paddingTop: 10,
+          display: "flex",
+          gap: 10,
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Skriv din besked"
+          onKeyDown={handleKeyDown}
+          placeholder="Skriv din besked…"
           style={{
             flex: 1,
-            padding: 12,
+            padding: "10px 12px",
             borderRadius: 8,
             border: "none",
+            outline: "none",
+            fontSize: 14,
           }}
         />
+
         <button
-          onClick={send}
+          onClick={sendMessage}
+          disabled={!canSend}
           style={{
-            padding: "10px 16px",
+            padding: "10px 18px",
             borderRadius: 8,
-            background: "#0096d6",
             border: "none",
+            fontWeight: 600,
+            backgroundColor: canSend ? "#0096d6" : "#335766",
             color: "#fff",
-            cursor: "pointer",
+            cursor: canSend ? "pointer" : "not-allowed",
+            opacity: canSend ? 1 : 0.5,
           }}
         >
           Send
