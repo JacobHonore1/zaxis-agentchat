@@ -1,6 +1,6 @@
 "use client";
 
-import agents from "../data/agents";
+import { agents } from "../data/agents";   // <-- FIXED
 import { useState } from "react";
 
 export default function AgentSidebar() {
@@ -48,6 +48,7 @@ export default function AgentSidebar() {
               <div style={{ fontSize: "18px", marginBottom: 4 }}>
                 {agent.icon} {agent.name}
               </div>
+
               <div style={{ fontSize: "13px", opacity: 0.8 }}>
                 {agent.description}
               </div>
