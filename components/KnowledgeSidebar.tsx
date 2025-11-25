@@ -14,13 +14,7 @@ function getIconForMime(mime?: string, name?: string) {
   return "📙";
 }
 
-export default function KnowledgeSidebar({
-  files = [],
-  onSelectFile,
-}: {
-  files?: DriveFile[];
-  onSelectFile: (file: DriveFile) => void;
-}) {
+export default function KnowledgeSidebar({ files = [] }: { files?: DriveFile[] }) {
   return (
     <div
       style={{
@@ -52,32 +46,27 @@ export default function KnowledgeSidebar({
           `}
         </style>
 
-        {files.length === 0 ? (
-          <div style={{ color: "#fff", opacity: 0.7 }}>Indlæser filer…</div>
-        ) : (
-          files.map((file) => (
-            <div
-              key={file.id}
-              onClick={() => onSelectFile(file)}
-              style={{
-                background: "rgba(255,255,255,0.07)",
-                padding: 14,
-                marginBottom: 14,
-                borderRadius: 10,
-                color: "white",
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-                cursor: "pointer",
-                transition: "0.1s",
-              }}
-            >
-              <div style={{ fontSize: 20 }}>{getIconForMime(file.mimeType, file.name)}</div>
-              <div style={{ fontSize: 15, fontWeight: 500 }}>{file.name}</div>
-              <div style={{ fontSize: 12, opacity: 0.8 }}>filtype</div>
+        {files.map((file) => (
+          <div
+            key={file.id}
+            style={{
+              background: "rgba(255,255,255,0.07)",
+              padding: 14,
+              marginBottom: 14,
+              borderRadius: 10,
+              color: "white",
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+            }}
+          >
+            <div style={{ fontSize: 20 }}>{getIconForMime(file.mimeType, file.name)}</div>
+            <div style={{ fontSize: 15, fontWeight: 500 }}>{file.name}</div>
+            <div style={{ fontSize: 12, opacity: 0.8 }}>
+              Uploadet: ukendt
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </div>
     </div>
   );
