@@ -3,59 +3,25 @@
 import { useState } from "react";
 import { DriveFile } from "../types/DriveFile";
 
-export default function ChatPane({ files = [] }: { files?: DriveFile[] }) {
+export default function ChatPane({ selectedFile }: { selectedFile: DriveFile | null }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // Find fil i tekst og match med vidensbanken
-  const detectRequestedFile = () => {
-    const match = input.match(/([A-Za-z0-9._-]+\.(pdf|docx|doc|csv|txt|xlsx|xls))/i);
-    if (!match) return null;
-
-    const fileName = match[1].toLowerCase();
-
-    const found = files.find((f: any) =>
-      f.name.toLowerCase() === fileName
-    );
-
-    return found || null;
-  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { role: "user", text: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: input,
+        requestedFile: selectedFile,
+      }),
+    });
 
-    const requestedFile = detectRequestedFile();
-    setLoading(true);
+    const data = await res.json();
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: input,
-          requestedFile, // ← her sender vi filen korrekt
-        }),
-      });
-
-      const data = await res.json();
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", text: data.answer || "Intet svar." },
-      ]);
-    } catch (err) {
-      console.error(err);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", text: "Der opstod en fejl i chatten." },
-      ]);
-    }
-
-    setLoading(false);
+    setMessages([...messages, { text: data.reply }]);
     setInput("");
   };
 
@@ -68,7 +34,7 @@ export default function ChatPane({ files = [] }: { files?: DriveFile[] }) {
         flexDirection: "column",
       }}
     >
-      {/* Chat messages */}
+      {/* Messages */}
       <div
         style={{
           flex: 1,
@@ -77,25 +43,13 @@ export default function ChatPane({ files = [] }: { files?: DriveFile[] }) {
         }}
       >
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              marginBottom: "16px",
-              color: msg.role === "assistant" ? "#fff" : "#aee2ff",
-            }}
-          >
+          <div key={i} style={{ marginBottom: "16px", color: "#fff" }}>
             {msg.text}
           </div>
         ))}
-
-        {loading && (
-          <div style={{ color: "#fff", opacity: 0.6 }}>
-            Assistenten skriver…
-          </div>
-        )}
       </div>
 
-      {/* Input area */}
+      {/* Input */}
       <div
         style={{
           display: "flex",
@@ -116,19 +70,18 @@ export default function ChatPane({ files = [] }: { files?: DriveFile[] }) {
           placeholder="Skriv din besked..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
 
         <button
-          disabled={!input.trim() || loading}
+          disabled={!input.trim()}
           onClick={sendMessage}
           style={{
             padding: "12px 18px",
             borderRadius: "8px",
             border: "none",
-            backgroundColor: input.trim() && !loading ? "#0077aa" : "gray",
+            backgroundColor: input.trim() ? "#0077aa" : "gray",
             color: "#fff",
-            cursor: input.trim() && !loading ? "pointer" : "not-allowed",
+            cursor: input.trim() ? "pointer" : "not-allowed",
           }}
         >
           Send
