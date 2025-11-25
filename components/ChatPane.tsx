@@ -1,111 +1,76 @@
 "use client";
 
 import { useState } from "react";
-import type React from "react";
-
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
 
 export default function ChatPane() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<{ role: string; text: string }[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSend() {
-    if (!input.trim() || isLoading) return;
+  async function sendMessage() {
+    if (!input.trim()) return;
 
-    const text = input.trim();
-    setInput("");
-
-    // tilføj brugerbesked
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    const userMessage = { role: "user", text: input };
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          agent: "linkedin",
-        }),
+        body: JSON.stringify({ message: input, agent: "default" }),
       });
 
       const data = await res.json();
+      const assistantMessage = {
+        role: "assistant",
+        text: data.reply || "Intet svar modtaget",
+      };
 
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: data.reply || "Ingen besked fra assistenten.",
-        },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Der opstod en fejl i kommunikationen med serveren.",
-        },
+        { role: "assistant", text: "Fejl i kommunikationen med serveren." },
       ]);
     }
 
+    setInput("");
     setIsLoading(false);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSend();
-    }
-  }
-
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Chat messages */}
       <div
         style={{
           flex: 1,
           overflowY: "auto",
           padding: "24px",
-          scrollbarWidth: "thin",
-          scrollbarColor: "#0b6fa4 transparent",
         }}
       >
-        {/* Chrome scrollbar */}
-        <style>
-          {`
-            div::-webkit-scrollbar { width: 6px; }
-            div::-webkit-scrollbar-thumb { background-color: #0b6fa4; border-radius: 4px; }
-            div::-webkit-scrollbar-track { background: transparent; }
-          `}
-        </style>
-
         {messages.map((msg, i) => (
           <div
             key={i}
             style={{
-              marginBottom: 12,
-              display: "flex",
-              flexDirection: "column",
-              maxWidth: "70%",
-              background: msg.role === "user" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.35)",
-              padding: 12,
-              borderRadius: 10,
-              color: "#fff",
+              marginBottom: "16px",
+              color: msg.role === "user" ? "#fff" : "#aee4ff",
+              fontWeight: msg.role === "assistant" ? 400 : 600,
             }}
           >
-            <strong style={{ fontSize: "0.8rem", opacity: 0.85, marginBottom: 4 }}>
-              {msg.role === "user" ? "Bruger" : "Assistent"}
-            </strong>
-            <span style={{ fontSize: "0.95rem" }}>{msg.content}</span>
+            {msg.text}
           </div>
         ))}
 
         {isLoading && (
-          <div style={{ marginTop: 8, fontStyle: "italic", color: "rgba(255,255,255,0.7)" }}>
+          <div style={{ color: "#7ec8ff", opacity: 0.8, fontStyle: "italic" }}>
             Assistenten skriver…
           </div>
         )}
@@ -132,19 +97,19 @@ export default function ChatPane() {
           placeholder="Skriv din besked..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
 
         <button
-          onClick={handleSend}
-          disabled={!input.trim() || isLoading}
+          disabled={!input.trim()}
+          onClick={sendMessage}
           style={{
             padding: "12px 18px",
             borderRadius: "8px",
             border: "none",
-            backgroundColor: !input.trim() || isLoading ? "gray" : "#0077aa",
+            backgroundColor: input.trim() ? "#0077aa" : "gray",
             color: "#fff",
-            cursor: !input.trim() || isLoading ? "not-allowed" : "pointer",
+            cursor: input.trim() ? "pointer" : "not-allowed",
           }}
         >
           Send
