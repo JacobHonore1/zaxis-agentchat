@@ -76,34 +76,17 @@ export default function Page() {
         }}
       >
         {/* Agent Sidebar */}
-        <div
-          style={{
-            width: "320px",
-            height: "100%",
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              borderRadius: "14px",
-            }}
-          >
-            <AgentSidebar />
-          </div>
+        <div style={{ width: "320px", flexShrink: 0 }}>
+          <AgentSidebar />
         </div>
 
         {/* Chat Pane */}
         <div
           style={{
             flex: 1,
-            height: "100%",
             borderRadius: "14px",
             overflow: "hidden",
-            background: "rgba(0,0,0,0.2)",
+            background: "rgba(0,0,0,0.20)",
             display: "flex",
             flexDirection: "column",
           }}
@@ -112,24 +95,8 @@ export default function Page() {
         </div>
 
         {/* Knowledge Sidebar */}
-        <div
-          style={{
-            width: "360px",
-            height: "100%",
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              borderRadius: "14px",
-            }}
-          >
-            <KnowledgeSidebar files={files} />
-          </div>
+        <div style={{ width: "360px", flexShrink: 0 }}>
+          <KnowledgeSidebar files={files} />
         </div>
       </div>
     </div>
