@@ -1,124 +1,75 @@
 "use client";
 
+import { DriveFile } from "../types";
 import { useEffect, useState } from "react";
-import { DriveFile } from "../types/DriveFile";
 
-export default function KnowledgeSidebar() {
-  const [files, setFiles] = useState<DriveFile[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function KnowledgeSidebar({ files = [] }: { files: DriveFile[] }) {
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function loadFiles() {
-      try {
-        const res = await fetch("/api/drive-files");
-        const data = await res.json();
-        setFiles(data.files || []);
-      } catch (err) {
-        console.error("Fejl ved hentning af filer fra vidensbank", err);
-      } finally {
-        setLoading(false);
-      }
+    // Når filer ankommer → stop loading
+    if (files.length > 0) {
+      setIsLoading(false);
     }
-
-    loadFiles();
-  }, []);
-
-  // farvede ikoner
-  function getColoredIcon(mime?: string) {
-    if (!mime) return <span style={{ fontSize: 20, color: "#ffeb3b" }}>📁</span>;
-
-    const m = mime.toLowerCase();
-
-    if (m.includes("pdf"))
-      return <span style={{ fontSize: 20, color: "#ff4b4b" }}>📕</span>;
-
-    if (m.includes("doc"))
-      return <span style={{ fontSize: 20, color: "#4ba3ff" }}>📘</span>;
-
-    if (m.includes("sheet") || m.includes("xls"))
-      return <span style={{ fontSize: 20, color: "#4bff7b" }}>📗</span>;
-
-    if (m.includes("text") || m.includes("txt"))
-      return <span style={{ fontSize: 20, color: "#ffeb3b" }}>📄</span>;
-
-    return <span style={{ fontSize: 20, color: "#ffeb3b" }}>📁</span>;
-  }
+  }, [files]);
 
   return (
     <div
       style={{
-        flex: 1,
+        width: "100%",
+        height: "100%",
+        backgroundColor: "rgba(255,255,255,0.04)",
+        borderRadius: "12px",
+        padding: "20px",
         display: "flex",
         flexDirection: "column",
-        padding: 20,
-        overflowY: "auto",
+        overflow: "hidden",
       }}
     >
+      <div style={{ color: "#fff", fontWeight: 600, marginBottom: "12px" }}>Vidensbank</div>
+
       <div
         style={{
-          color: "#fff",
-          fontSize: 16,
-          marginBottom: 16,
-          opacity: 0.9,
+          flex: 1,
+          overflowY: "auto",
+          paddingRight: "6px",
         }}
       >
-        Vidensbank
-      </div>
-
-      {loading && (
-        <div style={{ color: "#fff", opacity: 0.7, fontSize: 14 }}>
-          Henter filer fra vidensbank…
-        </div>
-      )}
-
-      {!loading && files.length === 0 && (
-        <div style={{ color: "#fff", opacity: 0.7, fontSize: 14 }}>
-          Ingen filer fundet i vidensbanken.
-        </div>
-      )}
-
-      {!loading &&
-        files.map((file) => (
+        {isLoading && (
           <div
-            key={file.id}
             style={{
-              padding: 12,
-              borderRadius: 8,
-              backgroundColor: "rgba(255,255,255,0.06)",
-              marginBottom: 10,
-              display: "flex",
-              flexDirection: "row",
-              gap: 10,
-              alignItems: "flex-start",
+              color: "#fff",
+              opacity: 0.8,
+              fontSize: "14px",
             }}
           >
-            {/* farvet ikon */}
-            {getColoredIcon(file.mimeType)}
-
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <strong
-                style={{
-                  color: "#fff",
-                  fontSize: 14,
-                  marginBottom: 4,
-                  wordBreak: "break-word",
-                }}
-              >
-                {file.name}
-              </strong>
-
-              <span
-                style={{
-                  color: "#c7d4dd",
-                  fontSize: 12,
-                  opacity: 0.8,
-                }}
-              >
-                {file.mimeType || "filtype"}
-              </span>
-            </div>
+            Henter filer…
           </div>
-        ))}
+        )}
+
+        {!isLoading &&
+          files.map((file) => (
+            <div
+              key={file.id}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.07)",
+                borderRadius: "10px",
+                padding: "14px",
+                marginBottom: "10px",
+                display: "flex",
+                flexDirection: "column",
+                color: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "18px" }}>📁</span>
+                <strong>{file.name}</strong>
+              </div>
+              <span style={{ fontSize: "12px", opacity: 0.6 }}>filtype</span>
+            </div>
+          ))}
+      </div>
     </div>
   );
 }
