@@ -76,7 +76,7 @@ export default function ChatPane() {
         )}
       </div>
 
-      {/* Input */}
+      {/* Input area */}
       <div
         style={{
           display: "flex",
