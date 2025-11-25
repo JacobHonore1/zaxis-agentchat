@@ -1,56 +1,68 @@
 "use client";
 
-import { DriveFile } from "../types/drive";
+import { DriveFile } from "../types/DriveFile";
 
 export default function KnowledgeSidebar({
   files = [],
-  onSelectFile,
 }: {
   files?: DriveFile[];
-  onSelectFile?: (file: DriveFile) => void;
 }) {
   return (
     <div
       style={{
         width: "100%",
         height: "100%",
-        overflowY: "auto",
-        paddingRight: "6px",
+        background: "rgba(0, 0, 0, 0.18)",
+        borderRadius: "12px",
+        padding: "20px",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        color: "white",
       }}
     >
-      <h3
+      {/* Header */}
+      <div
         style={{
+          marginBottom: "16px",
+          fontSize: "18px",
+          fontWeight: 600,
           color: "white",
-          fontSize: "16px",
-          marginBottom: "12px",
-          opacity: 0.85,
         }}
       >
         Vidensbank
-      </h3>
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+      {/* Scroll area */}
+      <div
+        style={{
+          overflowY: "auto",
+          paddingRight: "6px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+        }}
+      >
         {files.map((file) => (
           <div
             key={file.id}
-            onClick={() => onSelectFile && onSelectFile(file)}
             style={{
-              padding: "14px",
-              borderRadius: "12px",
+              background: "rgba(255,255,255,0.06)",
+              padding: "12px",
+              borderRadius: "10px",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: "10px",
               cursor: "pointer",
-              background: "rgba(255,255,255,0.08)",
-              boxShadow: "0 0 6px rgba(0,0,0,0.3)",
-              border: "1px solid transparent",
             }}
           >
-            <div style={{ fontSize: "18px" }}>📄</div>
-
-            <strong style={{ color: "white", fontSize: "15px" }}>
-              {file.name}
-            </strong>
-
-            <div style={{ color: "#cfd8dc", fontSize: "13px" }}>
-              {file.mimeType || "ukendt"}
+            <span style={{ fontSize: "18px" }}>📄</span>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <strong style={{ fontSize: "14px", color: "white" }}>
+                {file.name}
+              </strong>
+              <span style={{ fontSize: "12px", opacity: 0.6 }}>ukendt</span>
             </div>
           </div>
         ))}
