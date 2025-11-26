@@ -8,15 +8,19 @@ import { DriveFile } from "../types/DriveFile";
 
 export default function Page() {
   const [files, setFiles] = useState<DriveFile[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState<boolean>(false);
 
   useEffect(() => {
     const loadFiles = async () => {
       try {
+        setIsLoadingFiles(true);
         const res = await fetch("/api/drive-files");
         const data = await res.json();
         setFiles(data.files || []);
       } catch (err) {
-        console.error("Fejl ved hentning af filer", err);
+        console.error("Fejl ved hentning af filer:", err);
+      } finally {
+        setIsLoadingFiles(false);
       }
     };
 
@@ -32,14 +36,14 @@ export default function Page() {
         flexDirection: "column",
         background: "linear-gradient(135deg, #002233, #003b4d)",
         overflow: "hidden",
-        fontFamily: "Inter, sans-serif",
+        fontFamily: "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
       {/* Top bar */}
       <div
         style={{
           padding: "20px 40px",
-          fontSize: "24px",
+          fontSize: 24,
           fontWeight: 600,
           color: "#fff",
           display: "flex",
@@ -47,14 +51,14 @@ export default function Page() {
           alignItems: "center",
         }}
       >
-        Virtuo Assistent MVP 0.25b
+        Virtoo Assistent MVP 0.26a
 
         <button
           style={{
             padding: "8px 18px",
             backgroundColor: "#005f8a",
             color: "#fff",
-            borderRadius: "8px",
+            borderRadius: 8,
             border: "none",
             cursor: "pointer",
           }}
@@ -70,7 +74,7 @@ export default function Page() {
           flex: 1,
           display: "flex",
           flexDirection: "row",
-          gap: "24px",
+          gap: 24,
           padding: "0 40px 40px 40px",
           overflow: "hidden",
         }}
@@ -78,18 +82,21 @@ export default function Page() {
         {/* Agent Sidebar */}
         <div
           style={{
-            width: "320px",
+            width: 320,
             height: "100%",
             flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
           }}
         >
           <div
             style={{
-              flex: 1,
-              overflow: "hidden",
-              borderRadius: "14px",
+              height: "100%",
+              borderRadius: 16,
+              background: "rgba(0, 0, 0, 0.25)",
+              boxShadow: "0 0 18px rgba(0,0,0,0.4)",
+              padding: 20,
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             <AgentSidebar />
@@ -101,9 +108,10 @@ export default function Page() {
           style={{
             flex: 1,
             height: "100%",
-            borderRadius: "14px",
+            borderRadius: 16,
+            background: "rgba(0,0,0,0.22)",
+            boxShadow: "0 0 18px rgba(0,0,0,0.4)",
             overflow: "hidden",
-            background: "rgba(0,0,0,0.2)",
             display: "flex",
             flexDirection: "column",
           }}
@@ -114,21 +122,24 @@ export default function Page() {
         {/* Knowledge Sidebar */}
         <div
           style={{
-            width: "360px",
+            width: 360,
             height: "100%",
             flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
           }}
         >
           <div
             style={{
-              flex: 1,
-              overflow: "hidden",
-              borderRadius: "14px",
+              height: "100%",
+              borderRadius: 16,
+              background: "rgba(0, 0, 0, 0.25)",
+              boxShadow: "0 0 18px rgba(0,0,0,0.4)",
+              padding: 20,
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            <KnowledgeSidebar files={files} />
+            <KnowledgeSidebar files={files} isLoading={isLoadingFiles} />
           </div>
         </div>
       </div>
