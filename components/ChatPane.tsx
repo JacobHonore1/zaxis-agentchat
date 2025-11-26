@@ -37,10 +37,30 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
     setMessages((m) => [...m, botMsgObj]);
   }
 
+  // 🔍 Debug-helper — gør filerne synlige i browserens konsol
+  if (typeof window !== "undefined") {
+    // du kan nu køre:  window.__files_debug  i devtools
+    (window as any).__files_debug = files;
+  }
+
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Chat messages */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "24px", color: "#fff" }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "24px",
+          color: "#fff",
+        }}
+      >
         {messages.map((msg, i) => (
           <div key={i} style={{ marginBottom: 16 }}>
             {msg.text}
