@@ -12,25 +12,32 @@ export default function AgentSidebar() {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        padding: 20,
-        overflowY: "auto",
-        scrollbarWidth: "thin",
-        scrollbarColor: "#0b6fa4 transparent",
+        overflow: "hidden",
       }}
     >
-      <style>
-        {`
-          div::-webkit-scrollbar { width: 6px; }
-          div::-webkit-scrollbar-thumb { background-color: #0b6fa4; border-radius: 4px; }
-          div::-webkit-scrollbar-track { background: transparent; }
-        `}
-      </style>
-
-      <div style={{ color: "#fff", fontSize: 16, marginBottom: 16, opacity: 0.9 }}>
+      {/* Overskrift */}
+      <div
+        style={{
+          color: "#ffffff",
+          fontSize: 18,
+          fontWeight: 600,
+          marginBottom: 16,
+        }}
+      >
         Assistenter
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Liste med assistenter */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          paddingRight: 4,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
         {Object.values(AGENTS).map((agent: AgentConfig) => {
           const isActive = agent.id === active;
 
@@ -40,20 +47,34 @@ export default function AgentSidebar() {
               onClick={() => setActive(agent.id)}
               style={{
                 padding: 14,
-                borderRadius: 8,
+                borderRadius: 10,
                 backgroundColor: isActive
-                  ? "rgba(0, 130, 185, 0.6)"
+                  ? "rgba(0, 130, 185, 0.7)"
                   : "rgba(255,255,255,0.06)",
                 cursor: "pointer",
-                transition: "0.15s",
+                transition: "background-color 0.15s ease, transform 0.1s ease",
                 display: "flex",
+                flexDirection: "row",
                 gap: 10,
+                alignItems: "flex-start",
+                boxShadow: isActive
+                  ? "0 0 10px rgba(0, 130, 185, 0.7)"
+                  : "0 0 6px rgba(0,0,0,0.4)",
               }}
             >
               <div style={{ fontSize: 22 }}>{agent.icon}</div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <strong style={{ color: "#fff", fontSize: 15 }}>{agent.name}</strong>
-                <span style={{ color: "#c7d4dd", fontSize: 13, opacity: 0.9 }}>
+                <strong style={{ color: "#fff", fontSize: 15 }}>
+                  {agent.name}
+                </strong>
+                <span
+                  style={{
+                    color: "#c7d4dd",
+                    fontSize: 13,
+                    marginTop: 4,
+                    opacity: 0.9,
+                  }}
+                >
                   {agent.description}
                 </span>
               </div>
