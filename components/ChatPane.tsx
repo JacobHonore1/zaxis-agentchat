@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { DriveFile } from "../types/DriveFile";
 import ReactMarkdown from "react-markdown";
 
@@ -66,10 +66,27 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
   }
 
   const markdownStyles = `
-    p { margin: 1px 0; line-height: 1.15; }
-    ul { margin: 0 0 0 14px; }
-    li { margin: 1px 0; }
-    strong { font-weight: 700; }
+    p {
+      margin: 2px 0;
+      line-height: 1.22;
+    }
+
+    ol, ul {
+      margin: 2px 0 2px 18px;
+      padding-left: 16px;
+    }
+
+    li {
+      margin: 1px 0;
+    }
+
+    li > p {
+      margin: 0;
+    }
+
+    strong {
+      font-weight: 600;
+    }
   `;
 
   const typingStyles = `
@@ -123,26 +140,26 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "16px",
+          padding: "14px",
           color: "#fff",
           display: "flex",
           flexDirection: "column",
-          gap: "3px",
+          gap: "2px",
         }}
       >
         {messages.map((msg, i) => (
           <div
             key={i}
             style={{
-              maxWidth: "75%",
-              padding: "4px 8px",
+              maxWidth: "70%",
+              padding: "3px 8px",
               borderRadius: "8px",
               whiteSpace: "pre-line",
-              border: msg.role === "user" ? "2px solid #1b7cc4" : "2px solid #083b66",
+              border: msg.role === "user" ? "1px solid #1b7cc4" : "1px solid #083b66",
               background: msg.role === "user" ? "#3ba4e0" : "#0b5185",
               alignSelf: msg.role === "user" ? "flex-start" : "flex-end",
               fontSize: "14px",
-              lineHeight: "1.2",
+              lineHeight: 1.2,
             }}
           >
             <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -152,14 +169,14 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
         {isLoading && (
           <div
             style={{
-              maxWidth: "75%",
-              padding: "4px 8px",
+              maxWidth: "70%",
+              padding: "3px 8px",
               borderRadius: "8px",
-              border: "2px solid #083b66",
+              border: "1px solid #083b66",
               background: "#0b5185",
               alignSelf: "flex-end",
               fontSize: "14px",
-              lineHeight: "1.2",
+              lineHeight: 1.2,
             }}
           >
             <div className="typing-indicator">
