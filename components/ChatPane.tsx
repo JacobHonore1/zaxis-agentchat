@@ -54,10 +54,10 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
   }
 
   const markdownStyles = `
-    p { margin-bottom: 12px; line-height: 1.6; }
+    p { margin: 4px 0; line-height: 1.3; }
     strong { font-weight: 700; }
-    ul { margin-left: 20px; margin-bottom: 12px; }
-    li { margin-bottom: 6px; }
+    ul { margin: 4px 0 4px 18px; }
+    li { margin: 2px 0; }
   `;
 
   return (
@@ -77,11 +77,11 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "24px",
+          padding: "20px",
           color: "#fff",
           display: "flex",
           flexDirection: "column",
-          gap: "12px"
+          gap: "8px"
         }}
       >
         {messages.map((msg, i) => (
@@ -89,8 +89,8 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
             key={i}
             style={{
               maxWidth: "75%",
-              padding: "16px",
-              borderRadius: "12px",
+              padding: "10px 12px",
+              borderRadius: "10px",
               whiteSpace: "pre-line",
               border: msg.role === "user" ? "2px solid #1b7cc4" : "2px solid #083b66",
               background: msg.role === "user" ? "#3ba4e0" : "#0b5185",
@@ -108,15 +108,15 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
         style={{
           display: "flex",
           gap: "8px",
-          padding: "12px",
-          paddingBottom: "18px",
+          padding: "10px",
+          paddingBottom: "16px",
           background: "rgba(0,0,0,0.15)"
         }}
       >
         <input
           style={{
             flex: 1,
-            padding: "12px",
+            padding: "10px",
             borderRadius: "8px",
             border: "none",
             outline: "none"
@@ -131,7 +131,7 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
           disabled={!input.trim()}
           onClick={sendMessage}
           style={{
-            padding: "12px 18px",
+            padding: "10px 16px",
             borderRadius: "8px",
             border: "none",
             backgroundColor: input.trim() ? "#0077aa" : "gray",
