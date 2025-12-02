@@ -54,7 +54,7 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
   }
 
   const markdownStyles = `
-    p { margin: 4px 0; line-height: 1.3; }
+    p { margin: 4px 0; line-height: 1.1; }
     strong { font-weight: 700; }
     ul { margin: 4px 0 4px 18px; }
     li { margin: 2px 0; }
