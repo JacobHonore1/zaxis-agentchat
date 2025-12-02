@@ -1,15 +1,10 @@
 "use client";
 
-import { useState, KeyboardEvent } from "react";
+import { useState } from "react";
 import { DriveFile } from "../types/DriveFile";
 
-type ChatMessage = {
-  role: "user" | "assistant";
-  text: string;
-};
-
 export default function ChatPane({ files }: { files: DriveFile[] }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
 
   function findRequestedFile(message: string, files: DriveFile[]) {
@@ -18,144 +13,80 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
   }
 
   async function sendMessage() {
-    const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!input.trim()) return;
 
-    const requestedFile = findRequestedFile(trimmed, files);
+    const requestedFile = findRequestedFile(input, files);
 
-    const userMsgObj: ChatMessage = { role: "user", text: trimmed };
+    const userMsgObj = { role: "user", text: input };
     setMessages((m) => [...m, userMsgObj]);
+
     setInput("");
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userMsgObj.text,
-          requestedFile,
-        }),
-      });
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: userMsgObj.text,
+        requestedFile,
+      }),
+    });
 
-      const data = await res.json();
-      const replyText =
-        data?.reply && typeof data.reply === "string"
-          ? data.reply
-          : "Intet svar modtaget.";
+    const data = await res.json();
+    const botMsgObj = { role: "assistant", text: data.reply || "Intet svar." };
 
-      const botMsgObj: ChatMessage = {
-        role: "assistant",
-        text: replyText,
-      };
-
-      setMessages((m) => [...m, botMsgObj]);
-    } catch (err) {
-      console.error("Fejl i chat-kald:", err);
-      const botMsgObj: ChatMessage = {
-        role: "assistant",
-        text: "Der opstod en fejl, da jeg forsøgte at hente svar. Prøv venligst igen.",
-      };
-      setMessages((m) => [...m, botMsgObj]);
-    }
-  }
-
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (input.trim()) {
-        void sendMessage();
-      }
-    }
+    setMessages((m) => [...m, botMsgObj]);
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+      
+      {/* Scrollbar style only */}
+      <style>
+        {`
+          .chat-scroll::-webkit-scrollbar { width: 6px; }
+          .chat-scroll::-webkit-scrollbar-thumb { background-color: #0b6fa4; border-radius: 4px; }
+          .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+        `}
+      </style>
+
       {/* Chat messages */}
       <div
+        className="chat-scroll"
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: 24,
+          padding: "24px",
+          color: "#fff",
         }}
       >
-        {messages.length === 0 && (
-          <div style={{ color: "#ffffff", opacity: 0.7 }}>
-            Intet svar modtaget.
+        {messages.map((msg, i) => (
+          <div key={i} style={{ marginBottom: 16 }}>
+            {msg.text}
           </div>
-        )}
-
-        {messages.map((msg, i) => {
-          const isUser = msg.role === "user";
-
-          return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                justifyContent: isUser ? "flex-start" : "flex-end",
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  maxWidth: "70%",
-                  backgroundColor: isUser
-                    ? "rgba(0, 140, 190, 0.6)"
-                    : "rgba(0, 22, 40, 0.9)",
-                  borderRadius: 16,
-                  padding: "10px 14px",
-                  color: "#ffffff",
-                  fontSize: 14,
-                  lineHeight: 1.5,
-                  whiteSpace: "pre-wrap",
-                  boxShadow: "0 0 8px rgba(0,0,0,0.5)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 11,
-                    opacity: 0.8,
-                    marginBottom: 4,
-                  }}
-                >
-                  {isUser ? "Bruger" : "Assistent"}
-                </div>
-                <div>{msg.text}</div>
-              </div>
-            </div>
-          );
-        })}
+        ))}
       </div>
 
       {/* Input area */}
       <div
         style={{
           display: "flex",
-          gap: 8,
-          padding: "12px 16px 18px 16px",
-          background: "rgba(0,0,0,0.18)",
+          gap: "8px",
+          padding: "12px",
+          paddingBottom: "18px",
+          background: "rgba(0,0,0,0.15)",
         }}
       >
         <input
           style={{
             flex: 1,
-            padding: 12,
-            borderRadius: 8,
+            padding: "12px",
+            borderRadius: "8px",
             border: "none",
             outline: "none",
-            fontSize: 14,
           }}
           placeholder="Skriv din besked..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
         />
 
         <button
@@ -163,12 +94,11 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
           onClick={sendMessage}
           style={{
             padding: "12px 18px",
-            borderRadius: 8,
+            borderRadius: "8px",
             border: "none",
             backgroundColor: input.trim() ? "#0077aa" : "gray",
             color: "#fff",
             cursor: input.trim() ? "pointer" : "not-allowed",
-            minWidth: 70,
           }}
         >
           Send
