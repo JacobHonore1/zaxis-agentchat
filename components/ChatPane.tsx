@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DriveFile } from "../types/DriveFile";
+import ReactMarkdown from "react-markdown";
 
 export default function ChatPane({ files }: { files: DriveFile[] }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  function scrollToBottom() {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   function findRequestedFile(message: string, files: DriveFile[]) {
     const lowerMsg = message.toLowerCase();
@@ -19,7 +29,6 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
 
     const userMsgObj = { role: "user", text: input };
     setMessages((m) => [...m, userMsgObj]);
-
     setInput("");
 
     const res = await fetch("/api/chat", {
@@ -37,10 +46,24 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
     setMessages((m) => [...m, botMsgObj]);
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  const markdownStyles = `
+    p { margin-bottom: 12px; line-height: 1.6; }
+    strong { font-weight: 700; }
+    ul { margin-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 6px; }
+  `;
+
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-      
-      {/* Scrollbar style only */}
+      <style>{markdownStyles}</style>
+
       <style>
         {`
           .chat-scroll::-webkit-scrollbar { width: 6px; }
@@ -49,7 +72,6 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
         `}
       </style>
 
-      {/* Chat messages */}
       <div
         className="chat-scroll"
         style={{
@@ -57,23 +79,38 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
           overflowY: "auto",
           padding: "24px",
           color: "#fff",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px"
         }}
       >
         {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: 16 }}>
-            {msg.text}
+          <div
+            key={i}
+            style={{
+              maxWidth: "75%",
+              padding: "16px",
+              borderRadius: "12px",
+              whiteSpace: "pre-line",
+              border: msg.role === "user" ? "2px solid #1b7cc4" : "2px solid #083b66",
+              background: msg.role === "user" ? "#3ba4e0" : "#0b5185",
+              alignSelf: msg.role === "user" ? "flex-start" : "flex-end"
+            }}
+          >
+            <ReactMarkdown>{msg.text}</ReactMarkdown>
           </div>
         ))}
+
+        <div ref={chatEndRef} />
       </div>
 
-      {/* Input area */}
       <div
         style={{
           display: "flex",
           gap: "8px",
           padding: "12px",
           paddingBottom: "18px",
-          background: "rgba(0,0,0,0.15)",
+          background: "rgba(0,0,0,0.15)"
         }}
       >
         <input
@@ -82,11 +119,12 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
             padding: "12px",
             borderRadius: "8px",
             border: "none",
-            outline: "none",
+            outline: "none"
           }}
           placeholder="Skriv din besked..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
 
         <button
@@ -98,7 +136,7 @@ export default function ChatPane({ files }: { files: DriveFile[] }) {
             border: "none",
             backgroundColor: input.trim() ? "#0077aa" : "gray",
             color: "#fff",
-            cursor: input.trim() ? "pointer" : "not-allowed",
+            cursor: input.trim() ? "pointer" : "not-allowed"
           }}
         >
           Send
